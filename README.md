@@ -1,10 +1,12 @@
-gglsbl
+gglsbl3
 ======
 
-Python client library for Google Safe Browsing API
+Python 3 client library for Google Safe Browsing API
 
 Disclaimer
 ----------
+This Code is ported from here: https://github.com/afilipovich/gglsbl
+The master branch is experimental and unstable at the moment (until the first release). Use at your own risk!
 While the code was developed according to official
 [Developers Guide](https://developers.google.com/safe-browsing/developers_guide_v3)
 this is **not** a reference implementation. You also may want to check
@@ -45,7 +47,7 @@ CLI Tool
 --------
 *bin/gglsbl_client.py* can be used for quick testing and as a code example.
 
-To sync local cache with Safe Browsing API omitting [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage) delays
+To sync local cache with Safe Browsing API omitting [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage) delays (which is not recommended!)
 ```
     gglsbl_client.py --api-key 'API KEY GOES HERE' --onetime
 ```
