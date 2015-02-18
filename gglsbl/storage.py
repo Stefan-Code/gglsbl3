@@ -5,7 +5,7 @@ import sqlite3
 
 import logging
 log = logging.getLogger()
-log.addHandler(logging.NullHandler())
+#  log.setLevel(logging.DEBUG)
 
 
 class StorageBase(object):
@@ -20,7 +20,7 @@ class StorageBase(object):
         nums.sort()
         buf = []
         buf.append(nums[0])
-        for i in xrange(1, len(nums)):
+        for i in range(1, len(nums)):
             if nums[i-1] == nums[i]:
                 pass
             elif nums[i] - nums[i-1] == 1:
@@ -54,7 +54,7 @@ class StorageBase(object):
                         r1, r2 = r.split('-')
                         r1 = int(r1)
                         r2 = int(r2) + 1
-                        nums.extend(xrange(r1, r2))
+                        nums.extend(range(r1, r2))
                     except ValueError as e:
                         log.error('Failed to parse chunk range "%s"' % r)
                         raise
@@ -149,11 +149,19 @@ class SqliteStorage(StorageBase):
         "Store hashes found for the given hash prefix"
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
-        for list_name, hash_values in hashes['hashes'].items():
+        log.debug("cache_lifetime type: " + str(type(cache_lifetime)))
+        for list_name, hash_values in list(hashes['hashes'].items()):
+            log.debug("list_name: "+str(type(list_name))+" "+list_name.decode("ascii"))
             for hash_value in hash_values:
+                log.debug("hash_value type: "+str(type(hash_value))+" "+ hash_value.decode("cp437"))
+
                 q = "INSERT INTO full_hash (value, list_name, downloaded_at, expires_at)\
                     VALUES (?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
-                self.dbc.execute(q % cache_lifetime, [sqlite3.Binary(hash_value), list_name])
+                log.debug("sqlite: "+ str(type(sqlite3.Binary(hash_value))))
+                q = q % cache_lifetime
+                log.debug(q)
+                # q = q.decode("ascii")
+                self.dbc.execute(q, [sqlite3.Binary(hash_value), list_name])
         q = "UPDATE hash_prefix SET full_hash_expires_at=datetime(current_timestamp, '+%d SECONDS') \
             WHERE chunk_type='add' AND value=?"
         self.dbc.execute(q % cache_lifetime, [sqlite3.Binary(hash_prefix)])
@@ -227,7 +235,7 @@ class SqliteStorage(StorageBase):
                 WHERE chunk_type=? GROUP BY list_name"
             self.dbc.execute(q, [chunk_type])
             for list_name, chunks in self.dbc.fetchall():
-                if not output.has_key(list_name):
+                if list_name not in output:
                     output[list_name] = {}
                 chunks = [int(c) for c in chunks.split(',')]
                 output[list_name][chunk_type] = self.compress_ranges(chunks)

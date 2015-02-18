@@ -123,8 +123,7 @@ _CHUNKDATA_CHUNKTYPE.containing_type = _CHUNKDATA;
 _CHUNKDATA_PREFIXTYPE.containing_type = _CHUNKDATA;
 DESCRIPTOR.message_types_by_name['ChunkData'] = _CHUNKDATA
 
-class ChunkData(_message.Message):
-  __metaclass__ = _reflection.GeneratedProtocolMessageType
+class ChunkData(_message.Message, metaclass=_reflection.GeneratedProtocolMessageType):
   DESCRIPTOR = _CHUNKDATA
 
   # @@protoc_insertion_point(class_scope:ChunkData)

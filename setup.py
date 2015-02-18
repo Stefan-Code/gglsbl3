@@ -6,22 +6,20 @@ import sys, os
 
 __version__ = '0.3'
 
-setup(name='gglsbl',
+setup(name='gglsbl3',
     version=__version__,
     description="Client library for Google Safe Browsing API",
     classifiers=[
-        "Operating System :: POSIX",
-        "Environment :: Console",
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     keywords='safe browsing api client',
-    author='Aleh Filipovich',
-    author_email='aleh@vaolix.com',
-    url='https://github.com/afilipovich/gglsbl',
+    author='Stefan-Code',
+    author_email='Stefan-Code@users.noreply.github.com',
+    url='https://github.com/Stefan-Code/gglsbl3',
     license='Apache2',
     packages=['gglsbl'],
     install_requires=['argparse', 'pysqlite', 'protobuf'],
-    scripts=['bin/gglsbl_client.py'],
+    #  scripts=['bin/gglsbl_client.py'],
 )

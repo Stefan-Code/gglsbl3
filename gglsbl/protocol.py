@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-
-import urllib, urllib2, urlparse
+import urllib
+import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, urllib.parse
 import struct
 import time
-from StringIO import StringIO
+from io import StringIO
+from io import BytesIO
 import random
 import posixpath
 import re
@@ -14,7 +15,7 @@ from . import protobuf_pb2
 
 import logging
 log = logging.getLogger()
-log.addHandler(logging.NullHandler())
+#  log.setLevel(logging.DEBUG)
 
 class BaseProtocolClient(object):
     def __init__(self, api_key, discard_fair_use_policy=False):
@@ -39,26 +40,34 @@ class BaseProtocolClient(object):
         log.debug('Next query will be delayed %s seconds' % delay)
         self._next_call_timestamp = int(time.time()) + delay
 
-    def fair_use_delay(self):
-        "Delay server query according to Request Frequency policy"
+    def get_fair_use_delay(self):
+        "Compute Server Query Delay according to Request Frequency policy"
         if self._error_count == 1:
             delay = 60
         elif self._error_count > 1:
             delay = 60 * min(480, random.randint(30, 60) * (2 ** (self._error_count - 2)))
         else:
             delay = self._next_call_timestamp - int(time.time())
+        return delay
+    def fair_use_delay(self):
+        "Delay server query according to Request Frequency policy"
+        delay = self.get_fair_use_delay()
         if delay > 0 and not self.discard_fair_use_policy:
             log.info('Sleeping for %s seconds' % delay)
             time.sleep(delay)
 
     def apiCall(self, url, payload=None):
+        log.debug("performing api call to " + str(url) + " with payload: " + str(payload))
+        #  log.debug("type url:" + str(type(url))+ " type payload: "+ str(type(payload)))
         "Perform a call to Safe Browsing API"
         if payload is None:
-            payload = ''
-        request = urllib2.Request(url, data=StringIO(payload), headers={'Content-Length': len(payload)})
+            payload = b''
+        if type(payload) is str:
+            payload = bytes(payload.encode("ascii"))
+        request = urllib.request.Request(url, data=BytesIO(payload), headers={'Content-Length': len(payload)})
         try:
-            response = urllib2.urlopen(request)
-        except urllib2.HTTPError as e:
+            response = urllib.request.urlopen(request)
+        except urllib.error.HTTPError as e:
             self._error_count += 1
             raise
         self._error_count = 0
@@ -66,8 +75,8 @@ class BaseProtocolClient(object):
 
     def mkUrl(self, service):
         "Generate Safe Browsing API URL"
-        url = urllib.basejoin(self.config['base_url'], service)
-        query_params = '&'.join(['%s=%s' % (k,v) for k,v in self.config['url_args'].items()])
+        url = urllib.parse.urljoin(self.config['base_url'], service)
+        query_params = '&'.join(['%s=%s' % (k, v) for k, v in list(self.config['url_args'].items())])
         url = '%s?%s' % (url, query_params)
         return url
 
@@ -92,10 +101,10 @@ class Chunk(object):
         if decoded_chunk_data.prefix_type == 1:
             prefix_length = 32
         hashes_str = decoded_chunk_data.hashes
-        hashes_count = len(hashes_str) / prefix_length
+        hashes_count = len(hashes_str) // prefix_length
         hashes = []
-        for i in xrange(hashes_count):
-            hashes.append(hashes_str[prefix_length*i:prefix_length*(i+1)])
+        for i in range(hashes_count):
+            hashes.append(hashes_str[prefix_length * i:prefix_length * (i + 1)])
         self.hashes = hashes
         self.chunk_number = decoded_chunk_data.chunk_number
         self.chunk_type = chunk_type
@@ -156,13 +165,13 @@ class DataResponse(object):
 
     def _fetchChunks(self, url):
         "Download chunks of data containing hash prefixes"
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         return response
 
     @property
     def chunks(self):
         "Generator iterating through the server respones chunk by chunk"
-        for list_name, chunk_urls in self.lists_data.items():
+        for list_name, chunk_urls in list(self.lists_data.items()):
             for chunk_url in chunk_urls:
                 packed_chunks = self._fetchChunks(chunk_url)
                 for chunk_data in self._unpackChunks(packed_chunks):
@@ -184,6 +193,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         return lists
 
     def _fetchData(self, existing_chunks):
+        log.debug("chunks: " + str(existing_chunks))
         "Get references to data chunks containing hash prefixes"
         self.fair_use_delay()
         url = self.mkUrl('downloads')
@@ -204,6 +214,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         return response
 
     def _preparseData(self, data):
+        data = data.decode("ascii")
         data = data.split('\n')
         next_delay = data.pop(0).strip()
         if not next_delay.startswith('n:'):
@@ -245,10 +256,10 @@ class FullHashProtocolClient(BaseProtocolClient):
             if not hash_entry:
                 break
             has_metadata = False
-            header, hash_entry = hash_entry.split('\n', 1)
-            opts = header.split(':')
+            header, hash_entry = hash_entry.split(b'\n', 1)
+            opts = header.split(b':')
             if len(opts) == 4:
-                if opts[3] == 'm':
+                if opts[3] == b'm':
                     has_metadata = True
                 else:
                     raise RuntimeError('Failed to parse full hash entry header "%s"' % header)
@@ -257,13 +268,13 @@ class FullHashProtocolClient(BaseProtocolClient):
             entry_count = int(opts[2])
             hash_strings = []
             metadata_strings = []
-            for i in xrange(entry_count):
-                hash_string = hash_entry[entry_len*i:entry_len*(i+1)]
+            for i in range(entry_count):
+                hash_string = hash_entry[entry_len * i:entry_len * (i + 1)]
                 hash_strings.append(hash_string)
-            hash_entry =  hash_entry[entry_count * entry_len:]
+            hash_entry = hash_entry[entry_count * entry_len:]
             if has_metadata:
-                for i in xrange(entry_count):
-                    next_metadata_len, hash_entry = hash_entry.split('\n', 1)
+                for i in range(entry_count):
+                    next_metadata_len, hash_entry = hash_entry.split(b'\n', 1)
                     next_metadata_len = int(next_metadata_len)
                     metadata_str = hash_entry[:next_metadata_len]
                     metadata_strings.append(metadata_str)
@@ -276,17 +287,23 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def getHashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
+        #  hash_prefixes = hash_prefixes.decode("cp437")
         log.info('Downloading hashes for hash prefixes %s', repr(hash_prefixes))
         url = self.mkUrl('gethash')
         prefix_len = len(hash_prefixes[0])
         hashes_len = prefix_len * len(hash_prefixes)
         p_header = '%d:%d' % (prefix_len, hashes_len)
-        p_body = ''.join(hash_prefixes)
-        payload = '%s\n%s' % (p_header, p_body)
+        #  p_body = ''.join(hash_prefixes)
+        p_body = b''
+        for item in hash_prefixes:
+            p_body += item
+        payload = bytes(p_header.encode("ascii")) + b'\n' + p_body
+        #  payload = '%s\n%s' % (p_header, p_body)
         response = self.apiCall(url, payload)
-        first_line, response = response.split('\n', 1)
+        first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parseHashEntry(response)
+        log.debug("got metadata: " + str(metadata))
         return {'hashes': hashes,
                 'metadata': metadata,
                 'cache_lifetime': cache_lifetime,
@@ -309,22 +326,22 @@ class URL(object):
     def canonical(self):
         "Convert URL to its canonical form"
         def full_unescape(u):
-            uu = urllib.unquote(u)
+            uu = urllib.parse.unquote(u)
             if uu == u:
                 return uu
             else:
                 return full_unescape(uu)
         def quote(s):
             safe_chars = '!"$&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-            return urllib.quote(s, safe=safe_chars)
+            return urllib.parse.quote(s, safe=safe_chars)
         url = self.url.strip()
         url = url.replace('\n', '').replace('\r', '').replace('\t', '')
         url = url.split('#', 1)[0]
         url = quote(full_unescape(url))
-        url_parts = urlparse.urlsplit(url)
+        url_parts = urllib.parse.urlsplit(url)
         if not url_parts[0]:
             url = 'http://%s' % url
-            url_parts = urlparse.urlsplit(url)
+            url_parts = urllib.parse.urlsplit(url)
         protocol = url_parts.scheme
         host = full_unescape(url_parts.hostname)
         path = full_unescape(url_parts.path)
@@ -365,28 +382,28 @@ class URL(object):
                 yield host
                 return
             parts = host.split('.')
-            l = min(len(parts),5)
+            l = min(len(parts), 5)
             if l > 4:
                 yield host
-            for i in xrange(l-1):
-                yield '.'.join(parts[i-l:])
+            for i in range(l - 1):
+                yield '.'.join(parts[i - l:])
         def url_path_permutations(path):
             if path != '/':
                 yield path
             query = None
             if '?' in path:
-                path, query =  path.split('?', 1)
+                path, query = path.split('?', 1)
             if query is not None:
                 yield path
             path_parts = path.split('/')[0:-1]
             curr_path = ''
-            for i in xrange(min(4, len(path_parts))):
+            for i in range(min(4, len(path_parts))):
                 curr_path = curr_path + path_parts[i] + '/'
                 yield curr_path
-        protocol, address_str = urllib.splittype(url)
-        host, path = urllib.splithost(address_str)
-        user, host = urllib.splituser(host)
-        host, port = urllib.splitport(host)
+        protocol, address_str = urllib.parse.splittype(url)
+        host, path = urllib.parse.splithost(address_str)
+        user, host = urllib.parse.splituser(host)
+        host, port = urllib.parse.splitport(host)
         host = host.strip('/')
         for h in url_host_permutations(host):
             for p in url_path_permutations(path):
@@ -395,4 +412,4 @@ class URL(object):
     @staticmethod
     def digest(url):
         "Hash the URL"
-        return hashlib.sha256(url).digest()
+        return hashlib.sha256(url.encode("ascii")).digest()

@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-
-import logging
-log = logging.getLogger()
-log.addHandler(logging.NullHandler())
-
+import logger
+log = logger.Logger("client").get()
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
 from .storage import SqliteStorage
-
 
 class SafeBrowsingList(object):
     """Interface for Google Safe Browsing API
@@ -14,7 +10,7 @@ class SafeBrowsingList(object):
     supporting partial update of the local cache.
     https://developers.google.com/safe-browsing/developers_guide_v3
     """
-    def __init__(self, api_key, db_path='/tmp/gsb_v3.db', discard_fair_use_policy=False):
+    def __init__(self, api_key, db_path='./gsb_v3.db', discard_fair_use_policy=False):
         self.prefixListProtocolClient = PrefixListProtocolClient(api_key,
                                 discard_fair_use_policy=discard_fair_use_policy)
         self.fullHashProtocolClient = FullHashProtocolClient(api_key)
@@ -52,6 +48,7 @@ class SafeBrowsingList(object):
     def lookup_url(self, url):
         "Look up URL in Safe Browsing blacklists"
         url_hashes = URL(url).hashes
+        log.debug(url_hashes)
         for url_hash in url_hashes:
             list_name = self.lookup_hash(url_hash)
             if list_name:
@@ -63,6 +60,7 @@ class SafeBrowsingList(object):
 
         Returns names of lists it was found in.
         """
+        print(full_hash)
         hash_prefix = full_hash[0:4]
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):

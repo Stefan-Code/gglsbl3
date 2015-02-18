@@ -52,3 +52,20 @@ docs/_build/
 
 # PyBuilder
 target/
+
+#2to3 Backups
+*.bak
+
+# Pydev
+.project
+.pydevproject
+
+#Sqlite Databases
+*.db
+*.sqlite
+
+#Experiments
+untracked/
+
+#Coverage reports
+coverage/

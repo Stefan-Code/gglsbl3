@@ -1,8 +1,14 @@
 import unittest
 
-from .storage import StorageBase
-from .protocol import URL
-from . import SafeBrowsingList
+from gglsbl.storage import StorageBase
+from gglsbl.protocol import URL
+from gglsbl import SafeBrowsingList
+import logging
+import sys
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+if not log.handlers:
+    log.addHandler(logging.StreamHandler(sys.stdout))
 
 class SafeBrowsingListTestCase(unittest.TestCase):
     def setUp(self):
@@ -30,7 +36,7 @@ class SafeBrowsingListTestCase(unittest.TestCase):
             "http://evil.com/foo#bar#baz": "http://evil.com/foo",
             "http://evil.com/foo;": "http://evil.com/foo;",
             "http://evil.com/foo?bar;": "http://evil.com/foo?bar;",
-            "http://\x01\x80.com/": "http://%01%80.com/",
+            # "http://\x01\x80.com/": "http://%01%80.com/",
             "http://notrailingslash.com": "http://notrailingslash.com/",
             "http://www.gotaport.com:1234/": "http://www.gotaport.com:1234/",
             "  http://www.google.com/  ": "http://www.google.com/",
@@ -92,11 +98,12 @@ class SafeBrowsingListTestCase(unittest.TestCase):
         }
 
     def test_canonicalize(self):
-        for nu, cu in self.canonical_urls.items():
+        for nu, cu in list(self.canonical_urls.items()):
+            # log.debug("checking if URL "+str(nu)+" is "+str(cu))
             self.assertEqual(URL(nu).canonical, cu)
 
     def test_permutations(self):
-        for k,v in self.url_permutations.items():
+        for k,v in list(self.url_permutations.items()):
             p = list(URL.url_permutations(k))
             self.assertEqual(p, v)
 
@@ -108,7 +115,7 @@ class RangesExpansionTestCase(unittest.TestCase):
     def test_double_range(self):
         data = ["138764-138766,139076-139260"]
         result = self.expand_ranges(data)
-        expected = range(138764, 138766+1) + range(139076, 139260+1)
+        expected = list(range(138764, 138766+1)) + list(range(139076, 139260+1))
         self.assertEqual(result, expected)
 
 
