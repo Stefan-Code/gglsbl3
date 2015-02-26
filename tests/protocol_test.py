@@ -5,7 +5,7 @@ Created on Feb 18, 2015
 '''
 import unittest
 import urllib
-from gglsbl import protocol
+from gglsbl3 import protocol
 import time
 import sys
 import logging

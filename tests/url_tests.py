@@ -1,8 +1,8 @@
 import unittest
 
-from gglsbl.storage import StorageBase
-from gglsbl.protocol import URL
-from gglsbl import SafeBrowsingList
+from gglsbl3.storage import StorageBase
+from gglsbl3.protocol import URL
+from gglsbl3 import SafeBrowsingList
 import logging
 import sys
 log = logging.getLogger()

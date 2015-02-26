@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import logger
+from . import logger
 log = logger.Logger("client").get()
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
 from .storage import SqliteStorage
@@ -69,4 +69,3 @@ class SafeBrowsingList(object):
         except:
             self.storage.db.rollback()
             raise
-

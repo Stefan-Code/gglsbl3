@@ -19,7 +19,7 @@ setup(name='gglsbl3',
     author_email='Stefan-Code@users.noreply.github.com',
     url='https://github.com/Stefan-Code/gglsbl3',
     license='Apache2',
-    packages=['gglsbl'],
+    packages=['gglsbl3'],
     install_requires=['argparse', 'pysqlite', 'protobuf'],
     #  scripts=['bin/gglsbl_client.py'],
 )
