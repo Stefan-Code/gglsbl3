@@ -13,7 +13,7 @@ import json
 import sys
 import time
 
-from gglsbl import SafeBrowsingList
+from gglsbl3 import SafeBrowsingList
 
 import logging
 log = logging.getLogger()
@@ -23,27 +23,28 @@ log.setLevel(logging.DEBUG)
 def setupArgsParser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--api-key',
-                default=None,
-                required=True,
-                help='Safe Browsing API key [REQUIRED]')
+                        default=None,
+                        required=True,
+                        help='Safe Browsing API key [REQUIRED]')
     parser.add_argument('--db-path',
-                default='/tmp/gsb_v3.db',
-                help='Path to SQLite DB')
+                        default='./gsb_v3.db',
+                        help='Path to SQLite DB')
     parser.add_argument('--log',
-                default=None,
-                help='Path to log file, by default log to STDERR')
+                        default=None,
+                        help='Path to log file, by default log to STDERR')
     parser.add_argument('--check-url',
-                default=None,
-                help='Check if URL is in black list and exit')
+                        default=None,
+                        help='Check if URL is in black list and exit')
     parser.add_argument('--debug',
-                default=False,
-                action = 'store_true',
-                help='Show debug output')
+                        default=False,
+                        action='store_true',
+                        help='Show debug output')
     parser.add_argument('--onetime',
-                default=False,
-                action = 'store_true',
-                help='Run blacklists sync only once with reduced delays')
+                        default=False,
+                        action='store_true',
+                        help='Run blacklists sync only once with reduced delays')
     return parser
+
 
 def setupLogger(log_file, debug):
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -52,6 +53,7 @@ def setupLogger(log_file, debug):
     lh.setFormatter(formatter)
     log = logging.getLogger()
     log.addHandler(lh)
+
 
 def run_sync(sbl):
     try:
@@ -62,6 +64,7 @@ def run_sync(sbl):
     except:
         log.exception('Failed to synchronize with GSB service')
         time.sleep(3)
+
 
 def main():
     args_parser = setupArgsParser()
@@ -85,4 +88,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

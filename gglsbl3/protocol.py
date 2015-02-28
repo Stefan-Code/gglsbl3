@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 import urllib
-import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, urllib.parse
+import urllib.request
+import urllib.parse
+import urllib.error
+import urllib.request
+import urllib.error
+import urllib.parse
+import urllib.parse
 import struct
 import time
-from io import StringIO
 from io import BytesIO
 import random
 import posixpath
@@ -17,7 +22,9 @@ import logging
 log = logging.getLogger()
 #  log.setLevel(logging.DEBUG)
 
+
 class BaseProtocolClient(object):
+
     def __init__(self, api_key, discard_fair_use_policy=False):
         self.config = {
             "base_url": "https://safebrowsing.google.com/safebrowsing/",
@@ -49,6 +56,7 @@ class BaseProtocolClient(object):
         else:
             delay = self._next_call_timestamp - int(time.time())
         return delay
+
     def fair_use_delay(self):
         "Delay server query according to Request Frequency policy"
         delay = self.get_fair_use_delay()
@@ -82,7 +90,9 @@ class BaseProtocolClient(object):
 
 
 class Chunk(object):
+
     "Represents content of Data-response chunk content"
+
     def __init__(self, decoded_chunk_data, list_name):
         self.list_name = list_name
         self.hashes = []
@@ -112,10 +122,12 @@ class Chunk(object):
 
 
 class DataResponse(object):
+
     """Contains information on what changes need to be made
 
     to the local copy of hash prefixes list
     """
+
     def __init__(self, raw_data):
         self.del_add_chunks = []
         self.del_sub_chunks = []
@@ -180,6 +192,7 @@ class DataResponse(object):
 
 
 class PrefixListProtocolClient(BaseProtocolClient):
+
     def __init__(self, api_key, discard_fair_use_policy=False):
         super(PrefixListProtocolClient, self).__init__(api_key, discard_fair_use_policy)
         self.set_next_call_timeout(random.randint(0, 300))
@@ -235,6 +248,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
 
 class FullHashProtocolClient(BaseProtocolClient):
+
     def fair_use_delay(self):
         """Throttle queries according to Request Frequency policy
 
@@ -300,6 +314,7 @@ class FullHashProtocolClient(BaseProtocolClient):
         payload = bytes(p_header.encode("ascii")) + b'\n' + p_body
         #  payload = '%s\n%s' % (p_header, p_body)
         response = self.apiCall(url, payload)
+        print(response)
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parseHashEntry(response)
@@ -307,11 +322,13 @@ class FullHashProtocolClient(BaseProtocolClient):
         return {'hashes': hashes,
                 'metadata': metadata,
                 'cache_lifetime': cache_lifetime,
-        }
+                }
 
 
 class URL(object):
+
     "URL representation suitable for lookup"
+
     def __init__(self, url):
         self.url = str(url)
 
@@ -331,6 +348,7 @@ class URL(object):
                 return uu
             else:
                 return full_unescape(uu)
+
         def quote(s):
             safe_chars = '!"$&\'()*+,-./:;<=>?@[\\]^_`{|}~'
             return urllib.parse.quote(s, safe=safe_chars)
@@ -387,6 +405,7 @@ class URL(object):
                 yield host
             for i in range(l - 1):
                 yield '.'.join(parts[i - l:])
+
         def url_path_permutations(path):
             if path != '/':
                 yield path

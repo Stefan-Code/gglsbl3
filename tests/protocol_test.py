@@ -22,10 +22,13 @@ class BaseProtocolTest(unittest.TestCase):
     def setUp(self):
         self.api_key = "abcdefg"
         self.client = protocol.BaseProtocolClient(api_key=self.api_key, discard_fair_use_policy=False)
-
+        self.fullhashclient = protocol.FullHashProtocolClient(self.api_key, "./data.sqlite")
+        self.URL = protocol.URL("http://fromopics.com/something/somesite.html?a=b#1")
     def tearDown(self):
         pass
-
+    def testFullHashClient(self):
+        res = self.fullhashclient._parseHashEntry(b'goog-malware-shavar:32:1:m\n$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff2\n\x08\x02')
+        assert_equal(len(res), 2)
     def testBaseProtocolClientInit(self):
         assert_equal(self.client.config["url_args"]["key"], "abcdefg")
         assert_false(self.client.discard_fair_use_policy)
