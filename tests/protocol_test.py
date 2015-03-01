@@ -178,6 +178,9 @@ class URLTest(unittest.TestCase):
             hashes.append(hash)
         assert_equal(len(hashes), 4)
 
+    def testBare(self):
+        url = "google.com"
+        URLObject = protocol.URL(self.url)
 
 class PrefixListProtocolTest(unittest.TestCase):
 
