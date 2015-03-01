@@ -3,9 +3,8 @@
 import os
 import sqlite3
 
-import logging
-log = logging.getLogger()
-#  log.setLevel(logging.DEBUG)
+from gglsbl3 import logger
+log = logger.Logger("protocol").get()
 
 
 class StorageBase(object):

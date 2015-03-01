@@ -20,7 +20,6 @@ from . import protobuf_pb2
 
 from gglsbl3 import logger
 log = logger.Logger("protocol").get()
-#  log.setLevel(logging.DEBUG)
 
 
 class BaseProtocolClient(object):
@@ -163,8 +162,10 @@ class DataResponse(object):
 
     def _unpackChunks(self, chunkDataFH):
         "Unroll data chunk containing hash prefixes"
+        # log.debug("unpacking chunk data: {data}".format(data=chunkDataFH.read()))
         decoded_chunks = []
         while True:
+            log.debug("looping")
             packed_size = chunkDataFH.read(4)
             if len(packed_size) < 4:
                 break
@@ -173,21 +174,34 @@ class DataResponse(object):
             decoded_chunk = protobuf_pb2.ChunkData()
             decoded_chunk.ParseFromString(chunk_data)
             decoded_chunks.append(decoded_chunk)
+            log.debug("sucessfully decoded chunk: {chunk}".format(chunk=decoded_chunk))
+        log.debug("decoded chunks: {chunks}".format(chunks=decoded_chunks))
         return decoded_chunks
 
     def _fetchChunks(self, url):
         "Download chunks of data containing hash prefixes"
+        log.debug("fetching chunk {url}".format(url=url))
         response = urllib.request.urlopen(url)
+        log.debug("got response: {res}".format(res=response))
+        # readresponse = response.read()
+        # log.debug("got response: {res}".format(res=readresponse))
+        # log.debug("got response status: {status}".format(status=response.status))
         return response
 
     @property
     def chunks(self):
         "Generator iterating through the server respones chunk by chunk"
+        log.debug("accessing chunks")
         for list_name, chunk_urls in list(self.lists_data.items()):
+            log.debug(str(list_name)+str(chunk_urls))
             for chunk_url in chunk_urls:
+                log.debug("processing {url}".format(url = chunk_url))
                 packed_chunks = self._fetchChunks(chunk_url)
+                log.debug("packed chunks: {chunks}".format(chunks=packed_chunks))
                 for chunk_data in self._unpackChunks(packed_chunks):
+                    log.debug("chunk_data: {data}".format(data=chunk_data))
                     chunk = Chunk(chunk_data, list_name)
+                    log.debug("yielding {chunk}".format(chunk=chunk))
                     yield chunk
 
 
@@ -242,8 +256,9 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
         and return them as DataResponse object
         """
-        log.info('Retrieving prefixes')
+        log.info('Retrieving prefixes, existing_chunks: {chunks}'.format(chunks=existing_chunks))
         raw_data = self._fetchData(existing_chunks)
+        log.debug("got raw data: " + str(raw_data))
         preparsed_data = self._preparseData(raw_data)
         d = DataResponse(preparsed_data)
         return d
@@ -326,7 +341,7 @@ class FullHashProtocolClient(BaseProtocolClient):
         #  payload = '%s\n%s' % (p_header, p_body)
 
         response = self.apiCall(url, payload)
-        log.debug(response)
+        log.debug("response: " + str(response))
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parseHashEntry(response)
