@@ -2,7 +2,7 @@ gglsbl3
 ======
 
 Python 3 client library for Google Safe Browsing API
-
+![Coverage](https://img.shields.io/badge/coverage-150%25-brightgreen.svg "Coverage") Just kidding. But hey, at least we have unit tests...
 Disclaimer
 ----------
 This Code is ported from here: https://github.com/afilipovich/gglsbl
