@@ -1,3 +1,4 @@
+import logging
 LOG_DIR = "./logs"
-LOG_LEVEL_FILE = "DEBUG"
-LOG_LEVEL_CONSOLE = "INFO"
+LOG_LEVEL_FILE = logging.DEBUG
+LOG_LEVEL_CONSOLE = logging.DEBUG

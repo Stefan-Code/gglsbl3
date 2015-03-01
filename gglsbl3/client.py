@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import binascii
 from . import logger
 log = logger.Logger("client").get()
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
@@ -38,7 +39,7 @@ class SafeBrowsingList(object):
     def sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
-            log.debug('Cached full hash entries are still valid for "0x%s", no sync required.', hash_prefix.encode("hex"))
+            log.debug('Cached full hash entries are still valid for "{hex}", no sync required.'.format(hex=binascii.hexlify(hash_prefix)))
             return
         full_hashes = self.fullHashProtocolClient.getHashes([hash_prefix])
         if not full_hashes:
@@ -60,7 +61,7 @@ class SafeBrowsingList(object):
 
         Returns names of lists it was found in.
         """
-        print(full_hash)
+        log.debug("looking up {full_hash}".format(full_hash=full_hash))
         hash_prefix = full_hash[0:4]
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):

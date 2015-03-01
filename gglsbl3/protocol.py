@@ -18,8 +18,8 @@ import socket
 
 from . import protobuf_pb2
 
-import logging
-log = logging.getLogger()
+from gglsbl3 import logger
+log = logger.Logger("protocol").get()
 #  log.setLevel(logging.DEBUG)
 
 
@@ -202,6 +202,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         log.info('Fetching available lists')
         url = self.mkUrl('list')
         response = self.apiCall(url)
+        log.debug("got response" + str(response))
         lists = [l.strip() for l in response.split()]
         return lists
 
@@ -227,6 +228,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         return response
 
     def _preparseData(self, data):
+        log.debug("preparsing data: "+str(data))
         data = data.decode("ascii")
         data = data.split('\n')
         next_delay = data.pop(0).strip()
@@ -254,16 +256,25 @@ class FullHashProtocolClient(BaseProtocolClient):
 
         https://developers.google.com/safe-browsing/developers_guide_v3#RequestFrequency
         """
+        delay = self.get_fair_use_delay()
+        log.debug("preparing to sleep for "+str(delay)+" seconds")
+        if delay > 0 and not self.discard_fair_use_policy:
+            log.info('Sleeping for %s seconds' % delay)
+            time.sleep(delay)
+        else:
+            log.debug("didn't sleep because of settings. fair use is: " + str(self.discard_fair_use_policy))
+
+    def get_fair_use_delay(self):
         if self._error_count > 1:
             delay = min(120, 30 * (2 ** (self._error_count - 2)))
         else:
             delay = self._next_call_timestamp - int(time.time())
-        if delay > 0 and self.respect_fair_use_policy:
-            log.info('Sleeping for %s seconds' % delay)
-            time.sleep(delay)
+        log.debug("delay returned is " + str(delay))
+        return delay
 
     def _parseHashEntry(self, hash_entry):
         "Parse full-sized hash entry"
+        log.debug("parsing hash entry for " + str(hash_entry))
         hashes = {}
         metadata = {}
         while True:
@@ -313,8 +324,9 @@ class FullHashProtocolClient(BaseProtocolClient):
             p_body += item
         payload = bytes(p_header.encode("ascii")) + b'\n' + p_body
         #  payload = '%s\n%s' % (p_header, p_body)
+
         response = self.apiCall(url, payload)
-        print(response)
+        log.debug(response)
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parseHashEntry(response)
