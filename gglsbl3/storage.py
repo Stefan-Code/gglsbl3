@@ -257,3 +257,6 @@ class SqliteStorage(StorageBase):
         self.dbc.execute(q)
         self.db.commit()
         self.init_db()
+
+    def close(self):
+        self.db.close()

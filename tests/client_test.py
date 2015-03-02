@@ -4,18 +4,23 @@ Created on Mar 2, 2015
 @author: Stefan-Code
 '''
 import unittest
+from gglsbl3 import client
+import os
+from nose.tools import *
 
-
-class Test(unittest.TestCase):
+class ClientTest(unittest.TestCase):
 
     def setUp(self):
-        pass
+        self.api_key = "abcdef"
+        self.db_path = "./testdb.sqlite"
+        self.client = client.SafeBrowsingList(self.api_key, self.db_path, discard_fair_use_policy=False)
 
     def tearDown(self):
-        pass
+        self.client._close_storage()
+        os.remove(self.db_path)
 
     def testName(self):
-        pass
+        assert_equal(self.client.fullHashProtocolClient.config["url_args"]["key"], self.api_key)
 
 
 if __name__ == "__main__":

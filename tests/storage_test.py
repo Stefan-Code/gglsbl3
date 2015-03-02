@@ -19,6 +19,8 @@ class StorageTest(unittest.TestCase):
     def tearDown(self):
         try:
             self.storage.total_cleanup()
+            self.storage.close()
+            os.remove(self.dbpath)
         except Exception:
             raise
 

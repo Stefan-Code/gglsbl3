@@ -5,6 +5,7 @@ log = logger.Logger("client").get()
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
 from .storage import SqliteStorage
 
+
 class SafeBrowsingList(object):
     """Interface for Google Safe Browsing API
 
@@ -12,10 +13,12 @@ class SafeBrowsingList(object):
     https://developers.google.com/safe-browsing/developers_guide_v3
     """
     def __init__(self, api_key, db_path='./gsb_v3.db', discard_fair_use_policy=False):
-        self.prefixListProtocolClient = PrefixListProtocolClient(api_key,
-                                discard_fair_use_policy=discard_fair_use_policy)
+        self.prefixListProtocolClient = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
         self.fullHashProtocolClient = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
+
+    def _close_storage(self):
+        self.storage.close()
 
     def update_hash_prefix_cache(self):
         "Sync locally stored hash prefixes with remote server"
