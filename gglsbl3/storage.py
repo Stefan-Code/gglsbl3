@@ -246,7 +246,7 @@ class SqliteStorage(StorageBase):
         self.dbc.execute(q)
         q = 'DROP TABLE chunk'
         self.dbc.execute(q)
-        q = 'DROP TABLE full_prefix'
+        q = 'DROP TABLE full_hash'
         self.dbc.execute(q)
         self.db.commit()
         self.init_db()

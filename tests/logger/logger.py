@@ -17,7 +17,7 @@ class Logger(object):
         logger.setLevel(logging.DEBUG)
         if not logger.handlers:
             # ensure logging dir exists
-            logging_dir = "./"
+            logging_dir = "./logs/"
             ensure_dir(logging_dir)
             file_name = os.path.join(logging_dir, '%s.log' % name)
             handler = logging.handlers.TimedRotatingFileHandler(file_name)
