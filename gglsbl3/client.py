@@ -39,17 +39,21 @@ class SafeBrowsingList(object):
     def sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
-            log.debug('Cached full hash entries are still valid for "{hex}", no sync required.'.format(hex=binascii.hexlify(hash_prefix)))
+            log.debug('Cached full hash entries are still valid for "{hex}", no sync required.'.format(hex=binascii.hexlify(hash_prefix).decode("ascii")))
             return
         full_hashes = self.fullHashProtocolClient.getHashes([hash_prefix])
+        log.debug("got full hashes: {full_hashes}".format(full_hashes=full_hashes))
         if not full_hashes:
             return
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 
     def lookup_url(self, url):
+        return [x["list"] for x in self.lookup_url_with_metadata(url)]
+
+    def lookup_url_with_metadata(self, url):
         "Look up URL in Safe Browsing blacklists"
         url_hashes = URL(url).hashes
-        log.debug(url_hashes)
+        # log.debug(url_hashes)
         for url_hash in url_hashes:
             list_name = self.lookup_hash(url_hash)
             if list_name:
@@ -61,7 +65,7 @@ class SafeBrowsingList(object):
 
         Returns names of lists it was found in.
         """
-        log.debug("looking up {full_hash}".format(full_hash=full_hash))
+        log.debug('looking up "{full_hash}"'.format(full_hash=binascii.hexlify(full_hash).decode("ascii")))
         hash_prefix = full_hash[0:4]
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):

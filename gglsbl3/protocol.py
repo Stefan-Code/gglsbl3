@@ -15,9 +15,9 @@ import posixpath
 import re
 import hashlib
 import socket
-
+import binascii
 from . import protobuf_pb2
-
+from . import MalwarePatternType_pb2
 from gglsbl3 import logger
 log = logger.Logger("protocol").get()
 
@@ -62,6 +62,8 @@ class BaseProtocolClient(object):
         if delay > 0 and not self.discard_fair_use_policy:
             log.info('Sleeping for %s seconds' % delay)
             time.sleep(delay)
+        else:
+            log.info("didn't sleep because of settings")
 
     def apiCall(self, url, payload=None):
         log.debug("performing api call to " + str(url) + " with payload: " + str(payload))
@@ -149,6 +151,7 @@ class DataResponse(object):
                     url = 'https://%s' % url
                 lists_data[current_list_name].append(url)
             elif l.startswith('r:'):
+                log.warn("Reset is required!")
                 self.reset_required = True
             elif l.startswith('ad:'):
                 chunk_id = l.split(':')[1]
@@ -157,7 +160,7 @@ class DataResponse(object):
                 chunk_id = l.split(':')[1]
                 self.del_sub_chunks.append(chunk_id)
             else:
-                raise RuntimeError('Response line has unexpected prefix: "%s"' % l)
+                raise RuntimeError('Response line has unexpected prefix: "{prefix}"'.format(prefix=l))
         self.lists_data = lists_data
 
     def _unpackChunks(self, chunkDataFH):
@@ -199,9 +202,9 @@ class DataResponse(object):
                 packed_chunks = self._fetchChunks(chunk_url)
                 log.debug("packed chunks: {chunks}".format(chunks=packed_chunks))
                 for chunk_data in self._unpackChunks(packed_chunks):
-                    log.debug("chunk_data: {data}".format(data=chunk_data))
+                    # log.debug("chunk_data: {data}".format(data=chunk_data))
                     chunk = Chunk(chunk_data, list_name)
-                    log.debug("yielding {chunk}".format(chunk=chunk))
+                    # log.debug("yielding {chunk}".format(chunk=chunk))
                     yield chunk
 
 
@@ -289,7 +292,7 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def _parseHashEntry(self, hash_entry):
         "Parse full-sized hash entry"
-        log.debug("parsing hash entry for " + str(hash_entry))
+        log.debug("parsing hash entry for {hash_entry}".format(hash_entry=hash_entry))
         hashes = {}
         metadata = {}
         while True:
@@ -322,13 +325,30 @@ class FullHashProtocolClient(BaseProtocolClient):
             elif hash_entry:
                 raise RuntimeError('Hash length does not match header declaration (no metadata)')
             hashes[list_name] = hash_strings
-            metadata[list_name] = metadata_strings
+            log.debug("metadata strings are: {metadata_strings}".format(metadata_strings=metadata_strings))
+            #  now decode the metadata_strings with protobuf
+            metadata_strings_parsed = []
+            if has_metadata and metadata_strings:
+                for metadata_string in metadata_strings:
+                    try:
+                        metadata_string_proto = MalwarePatternType_pb2.MalwarePatternType()
+                        metadata_string_proto.ParseFromString(metadata_string)
+                        metadata_string_parsed = metadata_string_proto.pattern_type
+                        metadata_strings_parsed.append(metadata_string_parsed)
+                    except Exception:
+                        log.error("failed to parse metadata string: '{metadata_string}'".format(metadata_string=metadata_string))
+                        raise
+            else:
+                log.warn("hash '{hash_entry}' has not metadata!".format(hash_entry=hash_entry))
+            log.debug("parsed metadata strings: {metadata_strings_parsed}".format(metadata_strings_parsed=metadata_strings_parsed))
+            metadata[list_name] = metadata_strings_parsed
         return hashes, metadata
 
     def getHashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
         #  hash_prefixes = hash_prefixes.decode("cp437")
-        log.info('Downloading hashes for hash prefixes %s', repr(hash_prefixes))
+        debug_prefixes = [binascii.hexlify(hash).decode("ascii") for hash in hash_prefixes]
+        log.info('Downloading hashes for hash prefixes {prefixes}'.format(prefixes=debug_prefixes))
         url = self.mkUrl('gethash')
         prefix_len = len(hash_prefixes[0])
         hashes_len = prefix_len * len(hash_prefixes)
@@ -345,7 +365,7 @@ class FullHashProtocolClient(BaseProtocolClient):
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parseHashEntry(response)
-        log.debug("got metadata: " + str(metadata))
+        log.debug("got metadata: {metadata}".format(metadata=metadata))
         return {'hashes': hashes,
                 'metadata': metadata,
                 'cache_lifetime': cache_lifetime,

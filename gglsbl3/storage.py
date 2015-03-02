@@ -2,7 +2,8 @@
 
 import os
 import sqlite3
-
+import binascii
+import itertools
 from gglsbl3 import logger
 log = logger.Logger("protocol").get()
 
@@ -85,6 +86,7 @@ class SqliteStorage(StorageBase):
         """CREATE TABLE full_hash (
             value BLOB NOT NULL,
             list_name character varying(127) NOT NULL,
+            metadata TINYINT,
             downloaded_at timestamp DEFAULT current_timestamp,
             expires_at timestamp without time zone NOT NULL,
             PRIMARY KEY (value)
@@ -148,19 +150,22 @@ class SqliteStorage(StorageBase):
         "Store hashes found for the given hash prefix"
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
-        log.debug("cache_lifetime type: " + str(type(cache_lifetime)))
-        for list_name, hash_values in list(hashes['hashes'].items()):
-            log.debug("list_name: "+str(type(list_name))+" "+list_name.decode("ascii"))
-            for hash_value in hash_values:
-                log.debug("hash_value type: "+str(type(hash_value))+" "+ hash_value.decode("cp437"))
-
-                q = "INSERT INTO full_hash (value, list_name, downloaded_at, expires_at)\
-                    VALUES (?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
-                log.debug("sqlite: "+ str(type(sqlite3.Binary(hash_value))))
-                q = q % cache_lifetime
+        for hash_info, metadata_info in itertools.zip_longest(list(hashes['hashes'].items()), list(hashes['metadata'].items())):
+            list_name = hash_info[0]
+            hash_values = hash_info[1]
+            metadata_values = metadata_info[1]
+            log.debug("list_name: {list_name}".format(list_name=list_name))
+            for hash_value, metadata_value in itertools.zip_longest(hash_values, metadata_values):
+                # log.debug("hash_value type: "+str(type(hash_value))+" "+ hash_value.decode("cp437", errors='ignore'))
+                if metadata_value is None:
+                    metadata_value = 0
+                log.debug("metadata value is: {metadata_value}".format(metadata_value=metadata_value))
+                log.debug('storing hash: "{hash}"'.format(hash=binascii.hexlify(hash_value).decode("ascii")))
+                q = "INSERT INTO full_hash (value, list_name, metadata, downloaded_at, expires_at)\
+                    VALUES (?, ?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
+                q = q % cache_lifetime  # FIXME, use .format or something sql specific instead
                 log.debug(q)
-                # q = q.decode("ascii")
-                self.dbc.execute(q, [sqlite3.Binary(hash_value), list_name])
+                self.dbc.execute(q, [sqlite3.Binary(hash_value), list_name, metadata_value])
         q = "UPDATE hash_prefix SET full_hash_expires_at=datetime(current_timestamp, '+%d SECONDS') \
             WHERE chunk_type='add' AND value=?"
         self.dbc.execute(q % cache_lifetime, [sqlite3.Binary(hash_prefix)])
@@ -179,9 +184,11 @@ class SqliteStorage(StorageBase):
 
     def lookup_full_hash(self, hash_value):
         "Query DB to see if hash is blacklisted"
-        q = 'SELECT list_name FROM full_hash WHERE value=?'
+        q = 'SELECT list_name, metadata FROM full_hash WHERE value=?'
         self.dbc.execute(q, [sqlite3.Binary(hash_value)])
-        return [h[0] for h in self.dbc.fetchall()]
+        fetched = self.dbc.fetchall()
+        log.debug("fetched from database: {fetched}".format(fetched=fetched))
+        return [{"list": h[0], "metadata": h[1]} for h in fetched]
 
     def lookup_hash_prefix(self, hash_prefix):
         """Check if hash prefix is in the list and does not have 'sub'

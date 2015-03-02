@@ -51,6 +51,15 @@ class BaseProtocolTest(unittest.TestCase):
         delta = time2 - time1
         assert_equal(int(round(delta)), 2)
 
+    def testDiscardFairUse(self):
+        client = protocol.BaseProtocolClient(api_key=self.api_key, discard_fair_use_policy=True)
+        client.set_next_call_timeout(2)
+        time1 = time.time()
+        client.fair_use_delay()
+        time2 = time.time()
+        delta = time2 - time1
+        assert_equal(int(round(delta)), 0)
+
     def testMkUrl(self):
         url = self.client.mkUrl("downloads")
         assert_true(url.startswith("https://"))
@@ -117,7 +126,7 @@ class FullHashProtocolTest(unittest.TestCase):
             log.info("got result: {res}".format(res=result))
             # log.debug(httpretty.last_request())
             # log.debug(dir(httpretty.last_request()))
-            expected = {'hashes': {b'goog-malware-shavar': [b'$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff']}, 'cache_lifetime': 600, 'metadata': {b'goog-malware-shavar': [b'\x08\x02']}}
+            expected = {'hashes': {b'goog-malware-shavar': [b'$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff']}, 'cache_lifetime': 600, 'metadata': {b'goog-malware-shavar': [2]}} # integer is returned now as metadata instead of unparsed protobuf bytes
             assert_equal(result, expected)
         except:
             raise
@@ -133,6 +142,15 @@ class FullHashProtocolTest(unittest.TestCase):
         self.testSetNextCallTimeOut(10)
         delay = self.client.get_fair_use_delay()
         assert_in(delay, [9, 10])
+
+    def testDiscardFairUse(self):
+        client = protocol.FullHashProtocolClient(api_key=self.api_key, discard_fair_use_policy=True)
+        client.set_next_call_timeout(2)
+        time1 = time.time()
+        client.fair_use_delay()
+        time2 = time.time()
+        delta = time2 - time1
+        assert_equal(int(round(delta)), 0)
 
     def testGetFairUseDelayWithError(self):
         self.client._error_count = 1

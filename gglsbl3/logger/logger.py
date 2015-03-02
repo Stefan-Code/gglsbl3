@@ -11,7 +11,10 @@ import gglsbl3.settings.logger
 
 
 class Logger(object):
-
+    """
+    Usage: self.logger = Logger(self.__class__.__name__).get()
+           or log = Logger("somename").get()
+    """
     def __init__(self, name):
         name = name.replace('.log', '')
         logger = logging.getLogger('gglsbl3.%s' % name)
@@ -38,8 +41,8 @@ class Logger(object):
         return self._logger
 
 
-def ensure_dir(directory):  # FIXME: Duplicate from utils here because of circular dependencies!
+def ensure_dir(directory):  # FIXME: Unfortunate duplicate from utils here because of circular dependencies!
     if not os.path.exists(directory):
         os.makedirs(directory)
     if not os.path.exists(directory):
-        raise Exception("Somehting went wrong during DIR creation")
+        raise RuntimeError("Could not create dir: '{d}'".format(d=directory))
