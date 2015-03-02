@@ -1,13 +1,14 @@
 gglsbl3
 ======
 
-Python 3 client library for Google Safe Browsing API
+Python 3 client library for the Google Safe Browsing API (v3)
 
 ![Coverage](https://img.shields.io/badge/coverage-150%25-brightgreen.svg "Coverage") Just kidding. But hey, at least we have unit tests...
 Disclaimer
 ----------
-This Code is ported from here: https://github.com/afilipovich/gglsbl
+This Code is ported from here: https://github.com/afilipovich/gglsbl, although a lot of Unit Tests were added and a few more features introduced (like the ability to get the metadata for a match in a Safe Browsing List)
 The master branch is experimental and unstable at the moment (until the first release). Use at your own risk!
+
 While the code was developed according to official
 [Developers Guide](https://developers.google.com/safe-browsing/developers_guide_v3)
 this is **not** a reference implementation. You also may want to check
@@ -17,7 +18,7 @@ for Safe Browsing API
 Quick start
 -----------
 
-###### Get Google API key
+###### Get your Google API key
 Instructions can be found [here](https://developers.google.com/safe-browsing/lookup_guide#GettingStarted)
 
 ###### Install the library
@@ -26,7 +27,7 @@ Instructions can be found [here](https://developers.google.com/safe-browsing/loo
     python setup.py install
 ```
 
-###### To sync local hash prefix cache
+###### To sync the local hash cache
 
 ```python
     from gglsbl import SafeBrowsingList
@@ -34,7 +35,7 @@ Instructions can be found [here](https://developers.google.com/safe-browsing/loo
     sbl.update_hash_prefix_cache()
 ```
 
-*On a first run it may take up to several hours to complete the sync*
+*On a first run it may take up to several hours to complete the sync, you may also have to run it several times*
 
 ###### URL lookup
 
@@ -42,6 +43,10 @@ Instructions can be found [here](https://developers.google.com/safe-browsing/loo
     from gglsbl import SafeBrowsingList
     sbl = SafeBrowsingList('API KEY GOES HERE')
     sbl.lookup_url('http://github.com/')
+```
+This will return a list of matched Safe Browsing lists, e.g.
+```
+[b'goog-malware-shavar']
 ```
 
 CLI Tool
