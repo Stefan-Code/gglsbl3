@@ -36,7 +36,7 @@ class SafeBrowsingList(object):
             self.storage.db.rollback()
             raise
 
-    def sync_full_hashes(self, hash_prefix):
+    def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
             log.debug('Cached full hash entries are still valid for "{hex}", no sync required.'.format(hex=binascii.hexlify(hash_prefix).decode("ascii")))
@@ -48,19 +48,19 @@ class SafeBrowsingList(object):
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 
     def lookup_url(self, url):
-        return [x["list"] for x in self.lookup_url_with_metadata(url)]
+        return [x["list"] for x in self.lookup_url_with_metadata(url)]  # this retains backwards compability with clients not expecting the dictionary that includes metadata
 
     def lookup_url_with_metadata(self, url):
         "Look up URL in Safe Browsing blacklists"
         url_hashes = URL(url).hashes
         # log.debug(url_hashes)
         for url_hash in url_hashes:
-            list_name = self.lookup_hash(url_hash)
+            list_name = self._lookup_hash(url_hash)
             if list_name:
                 return list_name
         return None
 
-    def lookup_hash(self, full_hash):
+    def _lookup_hash(self, full_hash):
         """Lookup URL hash in blacklists
 
         Returns names of lists it was found in.
@@ -69,7 +69,7 @@ class SafeBrowsingList(object):
         hash_prefix = full_hash[0:4]
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):
-                self.sync_full_hashes(hash_prefix)
+                self._sync_full_hashes(hash_prefix)
                 return self.storage.lookup_full_hash(full_hash)
         except:
             self.storage.db.rollback()
