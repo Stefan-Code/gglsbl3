@@ -151,7 +151,10 @@ class SqliteStorage(StorageBase):
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
         for hash_info, metadata_info in itertools.zip_longest(list(hashes['hashes'].items()), list(hashes['metadata'].items())):
-            list_name = hash_info[0]
+            list_name_bytes = hash_info[0]
+            #  log.debug("list name bytes is: {list_name_bytes}".format(list_name_bytes=list_name_bytes))
+            list_name = list_name_bytes.decode("ascii")  # convert the bytestring listname to a 'normal' python string
+            #  log.debug("list_name is {list_name}".format(list_name=list_name))
             hash_values = hash_info[1]
             metadata_values = metadata_info[1]
             log.debug("list_name: {list_name}".format(list_name=list_name))
