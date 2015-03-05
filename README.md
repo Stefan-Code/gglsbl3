@@ -6,14 +6,14 @@ Python 3 client library for the Google Safe Browsing API (v3)
 ![Coverage](https://img.shields.io/badge/coverage-150%25-brightgreen.svg "Coverage") Just kidding. But hey, at least we have unit tests...
 Disclaimer
 ----------
-This Code is ported from here: https://github.com/afilipovich/gglsbl, although a lot of Unit Tests were added and a few more features introduced (like the ability to get the metadata for a match in a Safe Browsing List)
-The master branch is experimental and unstable at the moment (until the first release). Use at your own risk!
+The original code this project is based on can be found [here in afilipovich's repo](https://github.com/afilipovich/gglsbl) It was changed to support Python 3 (exclusively) and stuff like Unit Tests was added and a few more features introduced (like the ability to get the metadata for a match in the Google Safe Browsing List)
+The master branch is experimental and unstable at the moment (until the first release). Use at your own risk! (as always)
 
 While the code was developed according to official
 [Developers Guide](https://developers.google.com/safe-browsing/developers_guide_v3)
-this is **not** a reference implementation. You also may want to check
+this is **not** a reference implementation and is not connected with google in any way. You also may want to check
 [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage)
-for Safe Browsing API
+for Safe Browsing API. Use this code at your on riskof not complying with google standards or whatever.
 
 Quick start
 -----------
@@ -30,17 +30,17 @@ Instructions can be found [here](https://developers.google.com/safe-browsing/loo
 ###### To sync the local hash cache
 
 ```python
-    from gglsbl import SafeBrowsingList
-    sbl = SafeBrowsingList('API KEY GOES HERE')
+    from gglsbl3 import SafeBrowsingList
+    sbl = SafeBrowsingList('GOOGLE SAFE BROWSING V3 API KEY HERE')
     sbl.update_hash_prefix_cache()
 ```
 
-*On a first run it may take up to several hours to complete the sync, you may also have to run it several times*
+*On a first run it may take up to several hours to complete the sync, you may also have to run it several times to fully sync the database*
 
 ###### URL lookup
 
 ```python
-    from gglsbl import SafeBrowsingList
+    from gglsbl3 import SafeBrowsingList
     sbl = SafeBrowsingList('API KEY GOES HERE')
     sbl.lookup_url('http://github.com/')
 ```
@@ -48,9 +48,10 @@ This will return a list of matched Safe Browsing lists, e.g.
 ```
 [b'goog-malware-shavar']
 ```
-
+<!--
 CLI Tool
 --------
+This tool is not finished yet!
 *bin/gglsbl_client.py* can be used for quick testing and as a code example.
 
 To sync local cache with Safe Browsing API omitting [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage) delays (which is not recommended!)
@@ -67,3 +68,4 @@ Fore more options please see
 ```
     gglsbl_client.py --help
 ```
+!-->
