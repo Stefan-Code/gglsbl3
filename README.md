@@ -6,7 +6,7 @@ Python 3 client library for the Google Safe Browsing API (v3)
 ![Coverage](https://img.shields.io/badge/coverage-150%25-brightgreen.svg "Coverage") Just kidding. But hey, at least we have unit tests...
 Disclaimer
 ----------
-The original code this project is based on can be found [here in afilipovich's repo](https://github.com/afilipovich/gglsbl) It was changed to support Python 3 (exclusively) and stuff like Unit Tests was added and a few more features introduced (like the ability to get the metadata for a match in the Google Safe Browsing List)
+The original code this project is based on can be found [here in afilipovich's repo](https://github.com/afilipovich/gglsbl). It was changed to support Python 3 (exclusively) and stuff like Unit Tests was added and a few more features introduced (like the ability to get the metadata for a match in the Google Safe Browsing List)
 The master branch is experimental and unstable at the moment (until the first release). Use at your own risk! (as always)
 
 While the code was developed according to official
