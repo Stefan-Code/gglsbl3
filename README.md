@@ -46,7 +46,7 @@ Instructions can be found [here](https://developers.google.com/safe-browsing/loo
 ```
 This will return a list of matched Safe Browsing lists, e.g.
 ```
-[b'goog-malware-shavar']
+['goog-malware-shavar']
 ```
 <!--
 CLI Tool
