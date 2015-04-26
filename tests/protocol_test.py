@@ -192,8 +192,8 @@ class URLTest(unittest.TestCase):
 
     def testHashes(self):
         hashes = []
-        for hash in self.URLObject.hashes:
-            hashes.append(hash)
+        for hash_ in self.URLObject.hashes:
+            hashes.append(hash_)
         assert_equal(len(hashes), 4)
 
     def testBare(self):

@@ -7,13 +7,20 @@ more info on getting it here:
 https://developers.google.com/safe-browsing/lookup_guide#GettingStarted
 
 """
-
 import argparse
 import json
 import sys
 import time
-
-from gglsbl3 import SafeBrowsingList
+import os
+try:
+    from gglsbl3 import SafeBrowsingList
+except ImportError:  # some magic to allow usage even when gglsbl3 is not installed (i.e. in the Python Path)
+    try:  # trying relative import
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+        # print(sys.path)
+        from gglsbl3 import SafeBrowsingList
+    except ImportError:
+        raise ImportError("Seems like gglsbl3 is not installed")
 
 import logging
 log = logging.getLogger()

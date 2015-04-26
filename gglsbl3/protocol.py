@@ -347,7 +347,7 @@ class FullHashProtocolClient(BaseProtocolClient):
     def getHashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
         #  hash_prefixes = hash_prefixes.decode("cp437")
-        debug_prefixes = [binascii.hexlify(hash).decode("ascii") for hash in hash_prefixes]
+        debug_prefixes = [binascii.hexlify(hash).decode("ascii") for hash_prefix in hash_prefixes]
         log.info('Downloading hashes for hash prefixes {prefixes}'.format(prefixes=debug_prefixes))
         url = self.mkUrl('gethash')
         prefix_len = len(hash_prefixes[0])
