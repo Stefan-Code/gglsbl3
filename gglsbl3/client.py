@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import binascii
-from . import logger
-log = logger.Logger("client").get()
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
 from .storage import SqliteStorage
+from . import logger
+import binascii
+
+log = logger.Logger("client").get()
 
 
 class SafeBrowsingList(object):
@@ -12,6 +13,7 @@ class SafeBrowsingList(object):
     supporting partial update of the local cache.
     https://developers.google.com/safe-browsing/developers_guide_v3
     """
+
     def __init__(self, api_key, db_path='./gsb_v3.db', discard_fair_use_policy=False):
         self.prefixListProtocolClient = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
         self.fullHashProtocolClient = FullHashProtocolClient(api_key)
@@ -32,7 +34,7 @@ class SafeBrowsingList(object):
             for chunk in response.chunks:
                 if self.storage.chunk_exists(chunk):
                     log.debug('chunk #%d of type %s exists in stored list %s, skipping',
-                        chunk.chunk_number, chunk.chunk_type, chunk.list_name)
+                              chunk.chunk_number, chunk.chunk_type, chunk.list_name)
                     continue
                 self.storage.store_chunk(chunk)
         except:
