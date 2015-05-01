@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-import urllib
+import urllib.parse
+import urllib.request
+import urllib.error
 import struct
 import time
 from io import BytesIO
