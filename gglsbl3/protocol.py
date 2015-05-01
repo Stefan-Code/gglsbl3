@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 import urllib
-import urllib.request
-import urllib.parse
-import urllib.error
-import urllib.request
-import urllib.error
-import urllib.parse
-import urllib.parse
 import struct
 import time
 from io import BytesIO
@@ -346,8 +339,11 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def getHashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
-        #  hash_prefixes = hash_prefixes.decode("cp437")
-        debug_prefixes = [binascii.hexlify(hash).decode("ascii") for hash_prefix in hash_prefixes]
+#         for hash_prefix in hash_prefixes:
+#             log.debug("hash prefix: {}".format(hash_prefix))
+#             log.debug(binascii.hexlify(hash_prefix))
+#             log.debug(binascii.hexlify(hash_prefix).decode("ascii"))
+        debug_prefixes = [binascii.hexlify(hash_prefix).decode("ascii") for hash_prefix in hash_prefixes]
         log.info('Downloading hashes for hash prefixes {prefixes}'.format(prefixes=debug_prefixes))
         url = self.mkUrl('gethash')
         prefix_len = len(hash_prefixes[0])
