@@ -31,9 +31,19 @@ include/
 *.manifest
 *.spec
 
+#nano save files
+*.save
+*.save.*
+
+#man pages cache
+man/
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+
+#pip stuff
+pip-selfcheck.json
 
 # Unit test / coverage reports
 htmlcov/
