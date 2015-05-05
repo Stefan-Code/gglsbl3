@@ -21,7 +21,7 @@ except ImportError:  # some magic to allow usage even when gglsbl3 is not instal
         # If the following fails, then something went wrong even with the relative import! A wrong folder structure may be a cause
         from gglsbl3 import SafeBrowsingList
     except ImportError:
-        raise ImportError("Seems like gglsbl3 is not installed (or not in the Python PATH)")
+        raise ImportError("Seems like gglsbl3 is not installed (or not in the right Folder)")
 
 # Setup logger
 # FIXME: This logger is currently not being used by the setupLogger() function
