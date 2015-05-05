@@ -52,7 +52,7 @@ def setupArgsParser():
                         default=False,
                         action='store_true',
                         help='Run blacklists sync only once with reduced delays')
-    # FXIME: add -h and --help
+    # FXIME: add -h and --help | Edit: seems to be added by default, find a way to customise it
     # FIXME: create aliases
     return parser
 
@@ -83,11 +83,14 @@ def run_sync(sbl):
 
 
 def main():
+    # FIXME: Exit more gracefully on urllib.error.URLError and other exceptions.
+    # catch exceptions individually and provide info on how to fix them
     args_parser = setupArgsParser()
     args = args_parser.parse_args()
     setupLogger(args.log, args.debug)
     # FIXME: Sync before lookup?
     if args.check_url:
+        #FIXME: check for validity of API KEY, e.g. min-length
         sbl = SafeBrowsingList(args.api_key, db_path=args.db_path)
         bl = sbl.lookup_url(args.check_url)
         if bl is None:
