@@ -54,11 +54,14 @@ class BaseProtocolClient(object):
     def fair_use_delay(self):
         "Delay server query according to Request Frequency policy"
         delay = self.get_fair_use_delay()
-        if delay > 0 and not self.discard_fair_use_policy:
+        # FIXME: is delay > 0 check needed?
+        if delay < 0:
+            log.error("got negative delay: '{}', will not sleep".format(delay))
+        elif not self.discard_fair_use_policy:
             log.info('Sleeping for %s seconds' % delay)
             time.sleep(delay)
         else:
-            log.info("didn't sleep because of settings")
+            log.debug("didn't sleep because of settings")
 
     def apiCall(self, url, payload=None):
         log.debug("performing api call to " + str(url) + " with payload: " + str(payload))
