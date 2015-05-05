@@ -15,13 +15,18 @@ class SafeBrowsingList(object):
     """
 
     def __init__(self, api_key, db_path='./gsb_v3.db', discard_fair_use_policy=False):
+        # FIXME: missing docstring
         self.prefixListProtocolClient = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
         self.fullHashProtocolClient = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
 
     def _close_storage(self):
+        """
+        Close the connection to the database
+        """
         self.storage.close()
 
+    # FIXME: return True if there was something to update, return False if local database is in sync
     def update_hash_prefix_cache(self):
         "Sync locally stored hash prefixes with remote server"
         existing_chunks = self.storage.get_existing_chunks()
@@ -53,6 +58,7 @@ class SafeBrowsingList(object):
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 
     def lookup_url(self, url):
+        # FIXME: Missing docstring
         return [x["list"] for x in self.lookup_url_with_metadata(url)]  # this retains backwards compability with clients not expecting the dictionary that includes metadata
 
     def lookup_url_with_metadata(self, url):

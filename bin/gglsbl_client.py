@@ -8,21 +8,23 @@ https://developers.google.com/safe-browsing/lookup_guide#GettingStarted
 
 """
 import argparse
-import json
+import json  #FIXME Needed?
 import sys
 import time
 import os
+import logging
 try:
     from gglsbl3 import SafeBrowsingList
 except ImportError:  # some magic to allow usage even when gglsbl3 is not installed (i.e. in the Python Path)
     try:  # trying relative import
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
-        # print(sys.path)
+        # If the following fails, then something went wrong even with the relative import! A wrong folder structure may be a cause
         from gglsbl3 import SafeBrowsingList
     except ImportError:
-        raise ImportError("Seems like gglsbl3 is not installed")
+        raise ImportError("Seems like gglsbl3 is not installed (or not in the Python PATH)")
 
-import logging
+# Setup logger
+# FIXME: This logger is currently not being used by the setupLogger() function
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
@@ -50,10 +52,13 @@ def setupArgsParser():
                         default=False,
                         action='store_true',
                         help='Run blacklists sync only once with reduced delays')
+    # FXIME: add -h and --help
+    # FIXME: create aliases
     return parser
 
 
 def setupLogger(log_file, debug):
+    # FIXME: use project's logger instead of defining a new one here
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     lh = log_file is None and logging.StreamHandler() or logging.FileHandler(log_file)
     lh.setLevel(debug and logging.DEBUG or logging.INFO)
@@ -63,13 +68,17 @@ def setupLogger(log_file, debug):
 
 
 def run_sync(sbl):
+    """
+    Synchronises the local database with the remote google servers.
+    Takes a SafeBrowsingList Object as an argumant.
+    """
     try:
         sbl.update_hash_prefix_cache()
-    except (KeyboardInterrupt, SystemExit):
+    except (KeyboardInterrupt, SystemExit) as e:
         log.info('Shutting down')
         sys.exit(0)
-    except:
-        log.exception('Failed to synchronize with GSB service')
+    except Exception as e:
+        log.exception('Failed to synchronize with GSB service: {}'.format(e))
         time.sleep(3)
 
 
@@ -77,6 +86,7 @@ def main():
     args_parser = setupArgsParser()
     args = args_parser.parse_args()
     setupLogger(args.log, args.debug)
+    # FIXME: Sync before lookup?
     if args.check_url:
         sbl = SafeBrowsingList(args.api_key, db_path=args.db_path)
         bl = sbl.lookup_url(args.check_url)
