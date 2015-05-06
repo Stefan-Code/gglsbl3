@@ -439,6 +439,7 @@ class URL(object):
             canonical_url = '%s?%s' % (canonical_url, query)
         return canonical_url
 
+    # FIXME: move these to own module and out of class
     @staticmethod
     def url_permutations(url):
         """Try all permutations of hostname and path which can be applied
@@ -476,6 +477,7 @@ class URL(object):
             for p in url_path_permutations(path):
                 yield '%s%s' % (h, p)
 
+    # FXIME: todo
     @staticmethod
     def digest(url):
         "Hash the URL"
