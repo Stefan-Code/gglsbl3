@@ -261,6 +261,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         log.info('Retrieving prefixes')
         log.debug('existing_chunks: {chunks}'.format(chunks=existing_chunks))
         raw_data = self._fetchData(existing_chunks)
+        log.info("raw data length: {}".format(len(raw_data)))
         log.debug("got raw data: " + str(raw_data))
         preparsed_data = self._preparseData(raw_data)
         d = DataResponse(preparsed_data)
