@@ -8,7 +8,7 @@ import os
 if not sys.version[0]  == "3":
     raise Exception("This Program is for Python VERSION 3 only!")
 
-__version__ = '0.1'
+__version__ = '0.0.1'
 
 setup(name='gglsbl3',
       version=__version__,
