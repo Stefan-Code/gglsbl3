@@ -59,8 +59,14 @@ class SafeBrowsingList(object):
 
     def lookup_url(self, url):
         # FIXME: Missing docstring
-        return [x["list"] for x in self.lookup_url_with_metadata(url)]  # this retains backwards compability with clients not expecting the dictionary that includes metadata
-
+        # The following fails if the list is empty
+        # return [x["list"] for x in self.lookup_url_with_metadata(url)]  # this retains backwards compability with clients not expecting the dictionary that includes metadata
+        looked_up = self.lookup_url_with_metadata(url)
+        if looked_up:
+            return [x["list"] for x in looked_up]
+        else:
+            return None
+        
     def lookup_url_with_metadata(self, url):
         "Look up URL in Safe Browsing blacklists"
         url_hashes = URL(url).hashes
