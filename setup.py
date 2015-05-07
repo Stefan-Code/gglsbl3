@@ -8,7 +8,12 @@ import os
 if not sys.version[0]  == "3":
     raise Exception("This Program is for Python VERSION 3 only!")
 
-__version__ = '0.0.1'
+__version__ = '0.0.8'
+here = os.path.abspath(os.path.dirname(__file__))
+
+# Get the long description from the relevant file
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(name='gglsbl3',
       version=__version__,
@@ -18,6 +23,7 @@ setup(name='gglsbl3',
           "Topic :: Internet",
           "Topic :: Software Development :: Libraries :: Python Modules",
       ],
+      long_description=long_description,
       keywords='gglsbl3 gglsbl safebrowsing google-safe-browing googlesafebrowsing',
       author='Stefan-Code',
       author_email='Stefan-Code@users.noreply.github.com',
