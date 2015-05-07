@@ -8,7 +8,7 @@ https://developers.google.com/safe-browsing/lookup_guide#GettingStarted
 
 """
 import argparse
-import json  #FIXME Needed?
+import json  # FIXME: Needed?
 import sys
 import time
 import os
@@ -23,7 +23,7 @@ except ImportError:  # some magic to allow usage even when gglsbl3 is not instal
         # If the following fails, then something went wrong even with the relative import! A wrong folder structure may be a cause
         from gglsbl3 import SafeBrowsingList
     except ImportError:
-        raise ImportError("Seems like gglsbl3 is not installed (or not in the right Folder)")
+        raise ImportError("Seems like gglsbl3 is not installed (or not in the right Folder or you are missing dependencies)")
 
 
 def setupArgsParser():
@@ -53,10 +53,10 @@ def setupArgsParser():
     # FIXME: create aliases
     return parser
 
-
+# FIXME: move logging stuff to here. Beware of the scope
 def setupLogger(log_file, debug):
-    # FIXME: use project's logger instead of defining a new one here
     pass
+
 
 def run_sync(sbl):
     """
