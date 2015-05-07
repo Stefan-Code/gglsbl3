@@ -29,7 +29,7 @@ class Logger(object):
             formatter = logging.Formatter('%(levelname)s --#-- %(asctime)s --#-- %(name)s --#-- %(pathname)s --#-- %(filename)s --#-- %(module)s --#-- %(funcName)s --#-- Line %(lineno)d --#-- %(process)d --#-- %(processName)s --#-- %(thread)d --#-- %(threadName)s --#-- %(message)s')
             handler.setFormatter(formatter)
             handler.setLevel(gglsbl3.settings.logger.LOG_LEVEL_FILE)
-            logger.addHandler(handler)
+            # logger.addHandler(handler)  # uncomment this to enable logging to file
             ch = logging.StreamHandler(sys.stdout)
             ch.setLevel(gglsbl3.settings.logger.LOG_LEVEL_CONSOLE)
             formatter = logging.Formatter('%(levelname)s: %(message)s - %(filename)s:%(lineno)d')
