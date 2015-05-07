@@ -21,6 +21,6 @@ setup(name='gglsbl3',
       url='https://github.com/Stefan-Code/gglsbl3',
       license='Apache2',
       packages=['gglsbl3', 'gglsbl3.logger', 'gglsbl3.settings'],
-      install_requires=['argparse', 'sqlite3', 'python3-protobuf', ],
+      install_requires=['argparse', 'python3-protobuf', ],
       #  scripts=['bin/gglsbl_client.py'],
       )
