@@ -13,6 +13,8 @@ import sys
 import time
 import os
 import logging
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
 try:
     from gglsbl3 import SafeBrowsingList
 except ImportError:  # some magic to allow usage even when gglsbl3 is not installed (i.e. in the Python Path)
@@ -22,11 +24,6 @@ except ImportError:  # some magic to allow usage even when gglsbl3 is not instal
         from gglsbl3 import SafeBrowsingList
     except ImportError:
         raise ImportError("Seems like gglsbl3 is not installed (or not in the right Folder)")
-
-# Setup logger
-# FIXME: This logger is currently not being used by the setupLogger() function
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
 
 
 def setupArgsParser():
@@ -59,13 +56,7 @@ def setupArgsParser():
 
 def setupLogger(log_file, debug):
     # FIXME: use project's logger instead of defining a new one here
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    lh = log_file is None and logging.StreamHandler() or logging.FileHandler(log_file)
-    lh.setLevel(debug and logging.DEBUG or logging.INFO)
-    lh.setFormatter(formatter)
-    log = logging.getLogger()
-    log.addHandler(lh)
-
+    pass
 
 def run_sync(sbl):
     """
@@ -90,7 +81,7 @@ def main():
     setupLogger(args.log, args.debug)
     # FIXME: Sync before lookup?
     if args.check_url:
-        #FIXME: check for validity of API KEY, e.g. min-length
+        # FIXME: check for validity of API KEY, e.g. min-length
         sbl = SafeBrowsingList(args.api_key, db_path=args.db_path)
         bl = sbl.lookup_url(args.check_url)
         if bl is None:
