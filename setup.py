@@ -1,11 +1,11 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.4
 
 from setuptools import setup
 
 import sys
 import os
 
-__version__ = '0.3'
+__version__ = '0.1'
 
 setup(name='gglsbl3',
       version=__version__,
@@ -15,12 +15,12 @@ setup(name='gglsbl3',
           "Topic :: Internet",
           "Topic :: Software Development :: Libraries :: Python Modules",
       ],
-      keywords='safe browsing api client',
+      keywords='gglsbl3 gglsbl safebrowsing google-safe-browing googlesafebrowsing',
       author='Stefan-Code',
       author_email='Stefan-Code@users.noreply.github.com',
       url='https://github.com/Stefan-Code/gglsbl3',
       license='Apache2',
       packages=['gglsbl3', 'gglsbl3.logger', 'gglsbl3.settings'],
       install_requires=['argparse', 'python3-protobuf', ],
-      #  scripts=['bin/gglsbl_client.py'],
+      scripts=['scripts/gglsbl_client.py'],
       )
