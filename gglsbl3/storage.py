@@ -249,7 +249,9 @@ class SqliteStorage(StorageBase):
                 chunks = [int(c) for c in chunks.split(',')]
                 output[list_name][chunk_type] = self.compress_ranges(chunks)
         return output
-
+    
+    # FiXME: add stats about number of chunks, number of fullhashes
+    
     def total_cleanup(self):
         "Reset local cache"
         q = 'DROP TABLE hash_prefix'
@@ -260,6 +262,6 @@ class SqliteStorage(StorageBase):
         self.dbc.execute(q)
         self.db.commit()
         self.init_db()
-
+    
     def close(self):
         self.db.close()
