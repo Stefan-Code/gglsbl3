@@ -11,6 +11,7 @@ import re
 import hashlib
 import socket
 import binascii
+import gglsbl3.util
 from . import protobuf_pb2
 from . import MalwarePatternType_pb2
 from gglsbl3 import logger
@@ -58,7 +59,7 @@ class BaseProtocolClient(object):
         if delay < 0:
             log.error("got negative delay: '{}', will not sleep".format(delay))
         elif not self.discard_fair_use_policy:
-            log.info('Sleeping for %s seconds' % delay)
+            log.info('Sleeping for {}'.format(gglsbl3.util.prettify_seconds(delay)))
             time.sleep(delay)
         else:
             log.debug("didn't sleep because of settings")
@@ -257,7 +258,8 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
         and return them as DataResponse object
         """
-        log.info('Retrieving prefixes, existing_chunks: {chunks}'.format(chunks=existing_chunks))
+        log.info('Retrieving prefixes')
+        log.debug('existing_chunks: {chunks}'.format(chunks=existing_chunks))
         raw_data = self._fetchData(existing_chunks)
         log.debug("got raw data: " + str(raw_data))
         preparsed_data = self._preparseData(raw_data)
