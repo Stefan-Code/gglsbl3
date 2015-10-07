@@ -12,8 +12,8 @@ The master branch is experimental and unstable at the moment (until the first re
 While the code was developed according to official
 [Developers Guide](https://developers.google.com/safe-browsing/developers_guide_v3)
 this is **not** a reference implementation and is not connected with google in any way. You also may want to check
-[Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage)
-for Safe Browsing API. Use this software at your on risk! (e.g. not complying with google standards)
+ the [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage)
+for Safe Browsing API. Use this software at your own risk! (e.g. not complying with google standards)
 
 Quick start
 -----------
