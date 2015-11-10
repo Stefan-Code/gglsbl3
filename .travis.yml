@@ -3,9 +3,11 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
-install: "pip install -r requirements.txt"
+install:
+  "pip install -r requirements.txt"
+  "pip install -U ."
 
 script:
-  nosetests --with-coverage --cover-inclusive --cover-package=gglsbl3
+  "nosetests --with-coverage --cover-inclusive --cover-package=gglsbl3"
 after_success:
   coveralls
