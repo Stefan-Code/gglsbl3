@@ -7,13 +7,19 @@ Python 3 client library for the Google Safe Browsing API (v3)
 [![Coverage Status](https://coveralls.io/repos/Stefan-Code/gglsbl3/badge.svg?branch=master&service=github)](https://coveralls.io/github/Stefan-Code/gglsbl3?branch=master)
 
 The original code this project is based on can be found [here in afilipovich's repo](https://github.com/afilipovich/gglsbl). It was changed to support Python 3 (exclusively) and stuff like Unit Tests was added and a few more features introduced (like the ability to get the metadata for a match in the Google Safe Browsing List)
-The master branch is experimental and unstable at the moment (until the first release). Use at your own risk! (as always)
+The master branch is used for development, use a release if you want stability.
 
 While the code was developed according to official
 [Developers Guide](https://developers.google.com/safe-browsing/developers_guide_v3)
-this is **not** a reference implementation and is not connected with google in any way. You also may want to check
+this is **not** a reference implementation and is not affiliated with google in any way. You also may want to check
  the [Acceptable Use Policy](https://developers.google.com/safe-browsing/developers_guide_v3#AcceptableUsage)
-for Safe Browsing API. Use this software at your own risk! (e.g. not complying with google standards)
+for Safe Browsing API. Use this software at your own risk!
+
+Important information
+---------------
+This is **not** an implementation for the [Google Safe Browsing Lookup API](https://developers.google.com/safe-browsing/lookup_guide?hl=en).
+The lookup API would be using HTTP requests for *each* lookup you perform. The implementation used here instead, downloads an *offline copy* of a part of the database,
+which allows you to exceed the rate limit of the lookup API. Because of that you have to synchronise the database on the first run though.
 
 Quick start
 -----------
@@ -22,44 +28,46 @@ Quick start
 Instructions can be found [here](https://developers.google.com/safe-browsing/lookup_guide#GettingStarted)
 
 #### Install the library
-#####You can now install directly with pip!
+##### Using `pip` (recommended)
 
 Just run:
-```
+~~~
 pip install gglsbl3
-```
+~~~
 And you should be all set!
-#####Manual Installation
+##### Manual Installation
+
 Download the library, locate setup.py and run
 ```
-    python setup.py install
+python setup.py install
 ```
 
 ##### To sync the local hash cache
 
 ```python
-    from gglsbl3 import SafeBrowsingList
-    sbl = SafeBrowsingList('GOOGLE SAFE BROWSING V3 API KEY HERE')
-    sbl.update_hash_prefix_cache()
+from gglsbl3 import SafeBrowsingList
+sbl = SafeBrowsingList('GOOGLE SAFE BROWSING V3 API KEY HERE')
+sbl.update_hash_prefix_cache()
 ```
-#####Important
-*On a first run it may take up to several hours to complete the sync, you may also have to run it several times to fully sync the database. Before you can look up any urls, you have to sync the database.*
+##### Important
+On a first run it may take up to **several hours** to complete the sync, you may also have to run it several times to fully sync the database. Before you can look up any urls, you have to sync the database.
 
 ##### URL lookup
 
 ```python
-    from gglsbl3 import SafeBrowsingList
-    sbl = SafeBrowsingList('API KEY GOES HERE')
-    sbl.lookup_url('http://github.com/')
+from gglsbl3 import SafeBrowsingList
+sbl = SafeBrowsingList('API KEY GOES HERE')
+lookup_result = sbl.lookup_url('http://github.com/')
 ```
 This will return a list of matched Safe Browsing lists, e.g.
 ```
+>>> print(lookup_result)
 ['goog-malware-shavar']
 ```
 
 CLI Tool
 --------
-```scripts/gglsbl_client.py``` can be used for quick testing and as a code example.
+```scripts/gglsbl_client.py``` can be used for quick testing and as a code example. When installing with `pip` or `setup.py install` this tools should automatically be in your `PATH`.
 
 To sync local cache with Safe Browsing API
 ```
@@ -70,7 +78,7 @@ The same, but omitting [Acceptable Use Policy](https://developers.google.com/saf
     gglsbl_client.py --api-key 'API KEY GOES HERE' --onetime
 ```
 
-To look up URL
+To look up a URL
 ```
     gglsbl_client.py --api-key 'API KEY GOES HERE' --check-url http://github.com/
 ```
