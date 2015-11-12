@@ -135,7 +135,7 @@ class FullHashProtocolTest(unittest.TestCase):
             httpretty.reset()
 
     def testFullHashClient(self):
-        res = self.client._parseHashEntry(b'goog-malware-shavar:32:1:m\n$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff2\n\x08\x02')
+        res = self.client._parse_hash_entry(b'goog-malware-shavar:32:1:m\n$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff2\n\x08\x02')
         assert_equal(len(res), 2)
 
     def testGetFairUseDelay(self):
