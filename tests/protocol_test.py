@@ -60,11 +60,11 @@ class BaseProtocolTest(unittest.TestCase):
         delta = time2 - time1
         assert_equal(int(round(delta)), 0)
 
-    def testMkUrl(self):
-        url = self.client.mkUrl("downloads")
+    def test_make_url(self):
+        url = self.client.make_url("downloads")
         assert_true(url.startswith("https://"))
 
-    def testApiCall(self):
+    def test_api_call(self):
         httpretty.enable()  # enable HTTPretty so that it will monkey patch the socket module
         try:
             url = "https://test.com/download"
@@ -72,7 +72,7 @@ class BaseProtocolTest(unittest.TestCase):
             httpretty.register_uri(httpretty.POST, url,
                                    body=body)
             payload = "some unicode string"
-            result = self.client.apiCall(url, payload)
+            result = self.client.api_call(url, payload)
             assert_equal(result, body)
             assert_not_equal(result, body.decode("ascii"))
         except:
@@ -81,13 +81,13 @@ class BaseProtocolTest(unittest.TestCase):
             httpretty.disable()
             httpretty.reset()
 
-    def testApiCallError(self):
+    def test_api_call_rror(self):
         httpretty.enable()  # enable HTTPretty so that it will monkey patch the socket module
         try:
             url = "https://test.com/download"
             body = b"This is the response"
             httpretty.register_uri(httpretty.POST, url, body=body, status=401)
-            result = self.client.apiCall(url)
+            result = self.client.api_call(url)
             assert_equal(result, body)
             assert_not_equal(result, body.decode("ascii"))
         except urllib.error.HTTPError:
