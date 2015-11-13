@@ -4,8 +4,8 @@ import os
 import sqlite3
 import binascii
 import itertools
-from gglsbl3 import logger
-log = logger.Logger("protocol").get()
+import logging
+log = logging.getLogger('gglsbl3')
 
 
 class StorageBase(object):
@@ -159,7 +159,6 @@ class SqliteStorage(StorageBase):
             metadata_values = metadata_info[1]
             log.debug("list_name: {list_name}".format(list_name=list_name))
             for hash_value, metadata_value in itertools.zip_longest(hash_values, metadata_values):
-                # log.debug("hash_value type: "+str(type(hash_value))+" "+ hash_value.decode("cp437", errors='ignore'))
                 if metadata_value is None:
                     metadata_value = 0
                 log.debug("metadata value is: {metadata_value}".format(metadata_value=metadata_value))

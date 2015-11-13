@@ -34,7 +34,7 @@ setup(name='gglsbl3',
       author_email='Stefan.github@gmail.com',
       url='https://github.com/Stefan-Code/gglsbl3',
       license='Apache2',
-      packages=['gglsbl3', 'gglsbl3.logger', 'gglsbl3.settings', 'gglsbl3.util'],
+      packages=['gglsbl3', 'gglsbl3.util'],
       install_requires=['argparse', 'python3-protobuf', ],
       scripts=['scripts/gglsbl_client.py'],
       )

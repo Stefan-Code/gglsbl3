@@ -6,6 +6,7 @@ Created on Mar 2, 2015
 import unittest
 import os
 import pickle
+import copy
 
 from gglsbl3 import storage
 from nose.tools import *
@@ -18,7 +19,10 @@ class StorageTest(unittest.TestCase):
         if os.path.exists(self.dbpath):
             os.remove(self.dbpath)
         self.storage = storage.SqliteStorage(self.dbpath)
-
+        with open('tests/fake_chunk.pickle', 'rb') as fake_chunk_file:
+            self.fake_chunk = pickle.load(fake_chunk_file)
+        self.fake_chunk_other = copy.copy(self.fake_chunk)
+        self.fake_chunk_other.chunk_number += 1
     def tearDown(self):
         try:
             self.storage.total_cleanup()
@@ -42,9 +46,16 @@ class StorageTest(unittest.TestCase):
         _result = storage.StorageBase.expand_ranges(['1--7,-'])
 
     def test_store_chunk(self):
-        with open('tests/fake_chunk.pickle', 'rb') as fake_chunk_file:
-            fake_chunk = pickle.load(fake_chunk_file)
-        self.storage.store_chunk(fake_chunk)
+        self.storage.store_chunk(self.fake_chunk)
+
+    def test_chunk_exists(self):
+        self.test_store_chunk()
+        ok_(self.storage.chunk_exists(self.fake_chunk))
+
+    def test_chunk_not_exists(self):
+        ok_(not self.storage.chunk_exists(self.fake_chunk_other))
+
+        
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']

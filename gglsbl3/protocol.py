@@ -7,18 +7,21 @@ import urllib.request
 import urllib.error
 import struct
 import time
-from io import BytesIO
 import random
 import posixpath
 import re
 import hashlib
 import socket
 import binascii
+import logging
+from io import BytesIO
+
 import gglsbl3.util
 from gglsbl3 import protobuf_pb2
 from gglsbl3 import MalwarePatternType_pb2
-from gglsbl3 import logger
-log = logger.Logger("protocol").get()
+from gglsbl3.util import format_max_len
+
+log = logging.getLogger('gglsbl3')
 
 
 class BaseProtocolClient(object):
@@ -174,7 +177,6 @@ class DataResponse(object):
         # log.debug("unpacking chunk data: {data}".format(data=chunkDataFH.read()))
         decoded_chunks = []
         while True:
-            log.debug("looping")
             packed_size = chunkDataFH.read(4)
             if len(packed_size) < 4:
                 break
@@ -183,15 +185,14 @@ class DataResponse(object):
             decoded_chunk = protobuf_pb2.ChunkData()
             decoded_chunk.ParseFromString(chunk_data)
             decoded_chunks.append(decoded_chunk)
-            log.debug("sucessfully decoded chunk: %s", decoded_chunk)
-        log.debug("decoded chunks: %s", decoded_chunks)
+            # log.debug("sucessfully decoded chunk: %s", decoded_chunk)  # This produces way too much ouput
+        log.debug("decoded %d chunks", len(decoded_chunks))
         return decoded_chunks
 
     def _fetchChunks(self, url):
         "Download chunks of data containing hash prefixes"
-        log.debug("fetching chunk %s", url)
+        log.debug("fetching chunk %s", format_max_len(url, max_len=45))
         response = urllib.request.urlopen(url)
-        log.debug("got response: %s", response)
         return response
 
     @property
@@ -200,9 +201,8 @@ class DataResponse(object):
         log.debug("accessing chunks")
         for list_name, chunk_urls in list(self.lists_data.items()):
             for chunk_url in chunk_urls:
-                log.debug("processing %s", chunk_url)
+                log.debug("processing chunk url: %s", format_max_len(chunk_url, max_len=45))
                 packed_chunks = self._fetchChunks(chunk_url)
-                log.debug("packed chunks: %s", packed_chunks)
                 for chunk_data in self._unpack_chunks(packed_chunks):
                     # log.debug("chunk_data: {data}".format(data=chunk_data))
                     chunk = Chunk(chunk_data, list_name)
@@ -247,7 +247,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         return response
 
     def _preparse_data(self, data):
-        log.debug('preparsing data: %s', str(data))
+        log.debug('preparsing data (length %d)', len(data))
         data = data.decode("ascii")
         data = data.split('\n')
         next_delay = data.pop(0).strip()
@@ -267,7 +267,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         log.debug('existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
         log.info("raw data length: %d", len(raw_data))
-        log.debug("got raw data: %s", str(raw_data))
+        # log.debug("got raw data: %s", str(raw_data))  # this produces way too much output!
         preparsed_data = self._preparse_data(raw_data)
         d = DataResponse(preparsed_data)
         return d
@@ -500,7 +500,6 @@ class URL(object):
             for p in url_path_permutations(path):
                 yield '%s%s' % (h, p)
 
-    # FXIME: todo
     @staticmethod
     def digest(url):
         "Hash the URL"

@@ -1,12 +1,14 @@
 import unittest
+import logging
+import sys
 
 from gglsbl3.storage import StorageBase
 from gglsbl3.protocol import URL
 from gglsbl3 import SafeBrowsingList
-import logging
-import sys
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+from gglsbl3 import protocol
+
+log = logging.getLogger('gglsbl3')
+
 if not log.handlers:
     log.addHandler(logging.StreamHandler(sys.stdout))
 

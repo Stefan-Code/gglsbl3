@@ -5,12 +5,13 @@ Created on Feb 18, 2015
 '''
 import unittest
 import urllib
-from gglsbl3 import protocol
+import logging
 import time
 import httpretty
+
+from gglsbl3 import protocol
 from nose.tools import *
-from tests import logger
-log = logger.Logger("protocoltest").get()
+log = logging.getLogger('gglsbl3')
 
 
 class BaseProtocolTest(unittest.TestCase):

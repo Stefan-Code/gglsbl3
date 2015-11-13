@@ -4,7 +4,6 @@ Created on May 7, 2015
 @author: sk
 '''
 
-
 def prettify_seconds(seconds):
     if seconds < 0:
         raise Exception("negative input not allowed")
@@ -39,3 +38,15 @@ def prettify_seconds(seconds):
     else:
         output = seperator.join(filtered[:-1]) + last_seperator + filtered[-1]
     return output
+
+def format_max_len(string_to_format, max_len=15, replace="[...]"):
+    """
+    Formats a string so len(format_max_length(string_to_format)) <= max_len
+    If the string_to_format is longer than max_len, it replaces characters in the middle with [...]
+    """
+    real_max_len = max_len-len(replace)
+    if len(string_to_format) <= max_len:
+        return string_to_format
+    first = real_max_len//2
+    last = real_max_len-first
+    return string_to_format[0:first] + replace + string_to_format[len(string_to_format)-last:]
