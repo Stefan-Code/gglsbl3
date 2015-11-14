@@ -8,7 +8,7 @@ import os
 if not sys.version[0]  == "3":
     raise Exception("This Program is for Python **VERSION 3** only!")
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file
