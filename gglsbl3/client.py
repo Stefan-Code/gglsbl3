@@ -49,10 +49,10 @@ class SafeBrowsingList(object):
     def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
-            log.debug('Cached full hash entries are still valid for "{hex}", no sync required.'.format(hex=binascii.hexlify(hash_prefix).decode("ascii")))
+            log.debug('Cached full hash entries are still valid for "%s", no sync required.', binascii.hexlify(hash_prefix).decode("ascii"))
             return
         full_hashes = self.fullHashProtocolClient.getHashes([hash_prefix])
-        log.debug("got full hashes: {full_hashes}".format(full_hashes=full_hashes))
+        log.debug("got full hashes: %s", full_hashes)
         if not full_hashes:
             return
         self.storage.store_full_hashes(hash_prefix, full_hashes)
@@ -62,7 +62,6 @@ class SafeBrowsingList(object):
         Lookup a URL in the local database.
         Returns a list of "google list names" if the URL is found in one, otherwise None
         """
-        # FIXME: Missing docstring
         looked_up = self.lookup_url_with_metadata(url)
         if looked_up:
             return [x["list"] for x in looked_up]

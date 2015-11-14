@@ -44,19 +44,19 @@ class StorageBase(object):
         """
         nums = []
         for ranges in list_of_ranges:
-            for r in ranges.strip().split(','):
-                if type(r) is int:
-                    nums.append(r)
-                elif r.isdigit():
-                    nums.append(int(r))
+            for chunk_range in ranges.strip().split(','):
+                if type(chunk_range) is int:
+                    nums.append(chunk_range)
+                elif chunk_range.isdigit():
+                    nums.append(int(chunk_range))
                 else:
                     try:
-                        r1, r2 = r.split('-')
+                        r1, r2 = chunk_range.split('-')
                         r1 = int(r1)
                         r2 = int(r2) + 1
                         nums.extend(range(r1, r2))
                     except ValueError as e:
-                        log.error('Failed to parse chunk range {chunk_range} - {e}'.format(chunk_range=r, e=e))
+                        log.error('Failed to parse chunk range %s (%s)', chunk_range, e)
                         raise
         return nums
 
