@@ -5,12 +5,13 @@ Created on Feb 18, 2015
 '''
 import unittest
 import urllib
-from gglsbl3 import protocol
+import logging
 import time
 import httpretty
+
+from gglsbl3 import protocol
 from nose.tools import *
-from tests import logger
-log = logger.Logger("protocoltest").get()
+log = logging.getLogger('gglsbl3')
 
 
 class BaseProtocolTest(unittest.TestCase):
@@ -60,11 +61,11 @@ class BaseProtocolTest(unittest.TestCase):
         delta = time2 - time1
         assert_equal(int(round(delta)), 0)
 
-    def testMkUrl(self):
-        url = self.client.mkUrl("downloads")
+    def test_make_url(self):
+        url = self.client.make_url("downloads")
         assert_true(url.startswith("https://"))
 
-    def testApiCall(self):
+    def test_api_call(self):
         httpretty.enable()  # enable HTTPretty so that it will monkey patch the socket module
         try:
             url = "https://test.com/download"
@@ -72,7 +73,7 @@ class BaseProtocolTest(unittest.TestCase):
             httpretty.register_uri(httpretty.POST, url,
                                    body=body)
             payload = "some unicode string"
-            result = self.client.apiCall(url, payload)
+            result = self.client.api_call(url, payload)
             assert_equal(result, body)
             assert_not_equal(result, body.decode("ascii"))
         except:
@@ -81,13 +82,13 @@ class BaseProtocolTest(unittest.TestCase):
             httpretty.disable()
             httpretty.reset()
 
-    def testApiCallError(self):
+    def test_api_call_rror(self):
         httpretty.enable()  # enable HTTPretty so that it will monkey patch the socket module
         try:
             url = "https://test.com/download"
             body = b"This is the response"
             httpretty.register_uri(httpretty.POST, url, body=body, status=401)
-            result = self.client.apiCall(url)
+            result = self.client.api_call(url)
             assert_equal(result, body)
             assert_not_equal(result, body.decode("ascii"))
         except urllib.error.HTTPError:
@@ -135,7 +136,7 @@ class FullHashProtocolTest(unittest.TestCase):
             httpretty.reset()
 
     def testFullHashClient(self):
-        res = self.client._parseHashEntry(b'goog-malware-shavar:32:1:m\n$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff2\n\x08\x02')
+        res = self.client._parse_hash_entry(b'goog-malware-shavar:32:1:m\n$\xb2A\x91\xaf\xc2\xd5\x8b\xdfh\xc8R\x82Y\x9do\xbb\x84\x92\xf9\xa2h,\x02\xf4j\x8dQy\x1e\r\xff2\n\x08\x02')
         assert_equal(len(res), 2)
 
     def testGetFairUseDelay(self):

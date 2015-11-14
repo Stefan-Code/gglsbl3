@@ -1,25 +1,33 @@
 #!/usr/bin/env python
+"""
+Protocol module mainly for Python representations of objects from the google API
+"""
 import urllib.parse
 import urllib.request
 import urllib.error
 import struct
 import time
-from io import BytesIO
 import random
 import posixpath
 import re
 import hashlib
 import socket
 import binascii
+import logging
+from io import BytesIO
+
 import gglsbl3.util
-from . import protobuf_pb2
-from . import MalwarePatternType_pb2
-from gglsbl3 import logger
-log = logger.Logger("protocol").get()
+from gglsbl3 import protobuf_pb2
+from gglsbl3 import MalwarePatternType_pb2
+from gglsbl3.util import format_max_len
+
+log = logging.getLogger('gglsbl3')
 
 
 class BaseProtocolClient(object):
-
+    """
+    Base class FullHashProtocolClient and PrefixListProtocolClient inherit from.
+    """
     def __init__(self, api_key, discard_fair_use_policy=False):
         self.config = {
             "base_url": "https://safebrowsing.google.com/safebrowsing/",
@@ -40,7 +48,10 @@ class BaseProtocolClient(object):
         self._error_count = 0
 
     def set_next_call_timeout(self, delay):
-        log.debug('Next query will be delayed %s seconds' % delay)
+        """
+        Sets the timeout to be used for the next call
+        """
+        log.debug('Next query will be delayed %s seconds', delay)
         self._next_call_timestamp = int(time.time()) + delay
 
     def get_fair_use_delay(self):
@@ -56,33 +67,32 @@ class BaseProtocolClient(object):
     def fair_use_delay(self):
         "Delay server query according to Request Frequency policy"
         delay = self.get_fair_use_delay()
-        # FIXME: is delay > 0 check needed?
         if delay < 0:
-            log.error("got negative delay: '{}', will not sleep".format(delay))
+            log.error("got negative delay: '%s', will not sleep", delay)
         elif not self.discard_fair_use_policy:
-            log.info('Sleeping for {}'.format(gglsbl3.util.prettify_seconds(delay)))
+            log.info('Sleeping for %s', gglsbl3.util.prettify_seconds(delay))
             time.sleep(delay)
         else:
             log.debug("didn't sleep because of settings")
 
-    def apiCall(self, url, payload=None):
-        log.debug("performing api call to " + str(url) + " with payload: " + str(payload))
-        #  log.debug("type url:" + str(type(url))+ " type payload: "+ str(type(payload)))
+    def api_call(self, url, payload=None):
         "Perform a call to Safe Browsing API"
+        log.debug("performing api call to %s with payload: %s", url, payload)
         if payload is None:
             payload = b''
-        if type(payload) is str:
+        if isinstance(payload, str):
             payload = bytes(payload.encode("ascii"))
-        request = urllib.request.Request(url, data=BytesIO(payload), headers={'Content-Length': len(payload)})
+        request = urllib.request.Request(url, data=BytesIO(payload),
+                                         headers={'Content-Length': len(payload)})
         try:
             response = urllib.request.urlopen(request)
-        except urllib.error.HTTPError as e:
+        except urllib.error.HTTPError:
             self._error_count += 1
             raise
         self._error_count = 0
         return response.read()
 
-    def mkUrl(self, service):
+    def make_url(self, service):
         "Generate Safe Browsing API URL"
         url = urllib.parse.urljoin(self.config['base_url'], service)
         query_params = '&'.join(['%s=%s' % (k, v) for k, v in list(self.config['url_args'].items())])
@@ -100,11 +110,10 @@ class Chunk(object):
         self.chunk_number = None
         self.chunk_type = None
         self.prefix_length = None
-        self._loadChunk(decoded_chunk_data)
+        self._load_chunk(decoded_chunk_data)
 
-    def _loadChunk(self, decoded_chunk_data):
+    def _load_chunk(self, decoded_chunk_data):
         "Decode hash prefix entries"
-        hash_prefixes = []
         chunk_type = 'add'
         prefix_length = 4
         if decoded_chunk_data.chunk_type == 1:
@@ -133,9 +142,9 @@ class DataResponse(object):
         self.del_add_chunks = []
         self.del_sub_chunks = []
         self.reset_required = False
-        self._parseData(raw_data)
+        self._parse_data(raw_data)
 
-    def _parseData(self, data):
+    def _parse_data(self, data):
         lists_data = {}
         current_list_name = None
         for l in data:
@@ -163,12 +172,11 @@ class DataResponse(object):
                 raise RuntimeError('Response line has unexpected prefix: "{prefix}"'.format(prefix=l))
         self.lists_data = lists_data
 
-    def _unpackChunks(self, chunkDataFH):
+    def _unpack_chunks(self, chunkDataFH):
         "Unroll data chunk containing hash prefixes"
         # log.debug("unpacking chunk data: {data}".format(data=chunkDataFH.read()))
         decoded_chunks = []
         while True:
-            log.debug("looping")
             packed_size = chunkDataFH.read(4)
             if len(packed_size) < 4:
                 break
@@ -177,18 +185,14 @@ class DataResponse(object):
             decoded_chunk = protobuf_pb2.ChunkData()
             decoded_chunk.ParseFromString(chunk_data)
             decoded_chunks.append(decoded_chunk)
-            log.debug("sucessfully decoded chunk: {chunk}".format(chunk=decoded_chunk))
-        log.debug("decoded chunks: {chunks}".format(chunks=decoded_chunks))
+            # log.debug("sucessfully decoded chunk: %s", decoded_chunk)  # This produces way too much ouput
+        log.debug("decoded %d chunks", len(decoded_chunks))
         return decoded_chunks
 
     def _fetchChunks(self, url):
         "Download chunks of data containing hash prefixes"
-        log.debug("fetching chunk {url}".format(url=url))
+        log.debug("fetching chunk %s", format_max_len(url, max_len=45))
         response = urllib.request.urlopen(url)
-        log.debug("got response: {res}".format(res=response))
-        # readresponse = response.read()
-        # log.debug("got response: {res}".format(res=readresponse))
-        # log.debug("got response status: {status}".format(status=response.status))
         return response
 
     @property
@@ -196,12 +200,10 @@ class DataResponse(object):
         "Generator iterating through the server respones chunk by chunk"
         log.debug("accessing chunks")
         for list_name, chunk_urls in list(self.lists_data.items()):
-            log.debug(str(list_name)+str(chunk_urls))
             for chunk_url in chunk_urls:
-                log.debug("processing {url}".format(url = chunk_url))
+                log.debug("processing chunk url: %s", format_max_len(chunk_url, max_len=45))
                 packed_chunks = self._fetchChunks(chunk_url)
-                log.debug("packed chunks: {chunks}".format(chunks=packed_chunks))
-                for chunk_data in self._unpackChunks(packed_chunks):
+                for chunk_data in self._unpack_chunks(packed_chunks):
                     # log.debug("chunk_data: {data}".format(data=chunk_data))
                     chunk = Chunk(chunk_data, list_name)
                     # log.debug("yielding {chunk}".format(chunk=chunk))
@@ -217,17 +219,17 @@ class PrefixListProtocolClient(BaseProtocolClient):
     def getLists(self):
         "Get available black/white lists"
         log.info('Fetching available lists')
-        url = self.mkUrl('list')
-        response = self.apiCall(url)
-        log.debug("got response" + str(response))
+        url = self.make_url('list')
+        response = self.api_call(url)
+        log.debug("got response %s", response)
         lists = [l.strip() for l in response.split()]
         return lists
 
     def _fetchData(self, existing_chunks):
-        log.debug("chunks: " + str(existing_chunks))
         "Get references to data chunks containing hash prefixes"
+        log.debug("chunks: %s", existing_chunks)
         self.fair_use_delay()
-        url = self.mkUrl('downloads')
+        url = self.make_url('downloads')
         payload = []
         for l in self.config['lists']:
             list_data = existing_chunks.get(l, {})
@@ -241,11 +243,11 @@ class PrefixListProtocolClient(BaseProtocolClient):
                 list_data_cmp.append('s:%s' % list_data['sub'])
             payload.append('%s;%s' % (l, ':'.join(list_data_cmp)))
         payload = '\n'.join(payload) + '\n'
-        response = self.apiCall(url, payload)
+        response = self.api_call(url, payload)
         return response
 
-    def _preparseData(self, data):
-        log.debug("preparsing data: "+str(data))
+    def _preparse_data(self, data):
+        log.debug('preparsing data (length %d)', len(data))
         data = data.decode("ascii")
         data = data.split('\n')
         next_delay = data.pop(0).strip()
@@ -254,17 +256,19 @@ class PrefixListProtocolClient(BaseProtocolClient):
         self.set_next_call_timeout(int(next_delay[2:]))
         return data
 
-    def retrieveMissingChunks(self, existing_chunks={}):
+    def retrieveMissingChunks(self, existing_chunks=None):
         """Get list of changes from the remote server
 
         and return them as DataResponse object
         """
+        if existing_chunks is None:
+            existing_chunks = {}
         log.info('Retrieving prefixes')
-        log.debug('existing_chunks: {chunks}'.format(chunks=existing_chunks))
+        log.debug('existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
-        log.info("raw data length: {}".format(len(raw_data)))
-        log.debug("got raw data: " + str(raw_data))
-        preparsed_data = self._preparseData(raw_data)
+        log.info("raw data length: %d", len(raw_data))
+        # log.debug("got raw data: %s", str(raw_data))  # this produces way too much output!
+        preparsed_data = self._preparse_data(raw_data)
         d = DataResponse(preparsed_data)
         return d
 
@@ -277,24 +281,25 @@ class FullHashProtocolClient(BaseProtocolClient):
         https://developers.google.com/safe-browsing/developers_guide_v3#RequestFrequency
         """
         delay = self.get_fair_use_delay()
-        log.debug("preparing to sleep for "+str(delay)+" seconds")
+        log.debug("preparing to sleep for %d seconds", delay)
         if delay > 0 and not self.discard_fair_use_policy:
-            log.info('Sleeping for %s seconds' % delay)
+            log.info('Sleeping for %s seconds', delay)
             time.sleep(delay)
         else:
-            log.debug("didn't sleep because of settings. fair use is: " + str(self.discard_fair_use_policy))
+            log.debug("didn't sleep because of settings. fair use is: %s",
+                      self.discard_fair_use_policy)
 
     def get_fair_use_delay(self):
         if self._error_count > 1:
             delay = min(120, 30 * (2 ** (self._error_count - 2)))
         else:
             delay = self._next_call_timestamp - int(time.time())
-        log.debug("delay returned is " + str(delay))
+        log.debug("delay returned is %d", delay)
         return delay
 
-    def _parseHashEntry(self, hash_entry):
+    def _parse_hash_entry(self, hash_entry):
         "Parse full-sized hash entry"
-        log.debug("parsing hash entry for {hash_entry}".format(hash_entry=hash_entry))
+        log.debug("parsing hash entry for %s", hash_entry)
         hashes = {}
         metadata = {}
         while True:
@@ -327,7 +332,7 @@ class FullHashProtocolClient(BaseProtocolClient):
             elif hash_entry:
                 raise RuntimeError('Hash length does not match header declaration (no metadata)')
             hashes[list_name] = hash_strings
-            log.debug("metadata strings are: {metadata_strings}".format(metadata_strings=metadata_strings))
+            log.debug("metadata strings are: %s", metadata_strings)
             #  now decode the metadata_strings with protobuf
             metadata_strings_parsed = []
             if has_metadata and metadata_strings:
@@ -335,26 +340,22 @@ class FullHashProtocolClient(BaseProtocolClient):
                     try:
                         metadata_string_proto = MalwarePatternType_pb2.MalwarePatternType()
                         metadata_string_proto.ParseFromString(metadata_string)
-                        metadata_string_parsed = metadata_string_proto.pattern_type
+                        metadata_string_parsed = metadata_string_proto.pattern_type  # pylint: disable=E1101
                         metadata_strings_parsed.append(metadata_string_parsed)
                     except Exception:
-                        log.error("failed to parse metadata string: '{metadata_string}'".format(metadata_string=metadata_string))
+                        log.error("failed to parse metadata string: '%s'", metadata_string)
                         raise
             else:
-                log.warn("hash '{hash_entry}' has not metadata!".format(hash_entry=hash_entry))
-            log.debug("parsed metadata strings: {metadata_strings_parsed}".format(metadata_strings_parsed=metadata_strings_parsed))
+                log.warn("hash '%s' has not metadata!", hash_entry)
+            log.debug("parsed metadata strings: %s", metadata_strings_parsed)
             metadata[list_name] = metadata_strings_parsed
         return hashes, metadata
 
     def getHashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
-#         for hash_prefix in hash_prefixes:
-#             log.debug("hash prefix: {}".format(hash_prefix))
-#             log.debug(binascii.hexlify(hash_prefix))
-#             log.debug(binascii.hexlify(hash_prefix).decode("ascii"))
         debug_prefixes = [binascii.hexlify(hash_prefix).decode("ascii") for hash_prefix in hash_prefixes]
-        log.info('Downloading hashes for hash prefixes {prefixes}'.format(prefixes=debug_prefixes))
-        url = self.mkUrl('gethash')
+        log.info('Downloading hashes for hash prefixes %s', debug_prefixes)
+        url = self.make_url('gethash')
         prefix_len = len(hash_prefixes[0])
         hashes_len = prefix_len * len(hash_prefixes)
         p_header = '%d:%d' % (prefix_len, hashes_len)
@@ -365,16 +366,16 @@ class FullHashProtocolClient(BaseProtocolClient):
         payload = bytes(p_header.encode("ascii")) + b'\n' + p_body
         #  payload = '%s\n%s' % (p_header, p_body)
 
-        response = self.apiCall(url, payload)
-        log.debug("response: " + str(response))
+        response = self.api_call(url, payload)
+        log.debug("response: %s", str(response))
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
-        hashes, metadata = self._parseHashEntry(response)
-        log.debug("got metadata: {metadata}".format(metadata=metadata))
+        hashes, metadata = self._parse_hash_entry(response)
+        log.debug("got metadata: %s", metadata)
         return {'hashes': hashes,
                 'metadata': metadata,
-                'cache_lifetime': cache_lifetime,
-                }
+                'cache_lifetime': cache_lifetime
+               }
 
 
 class URL(object):
@@ -395,15 +396,21 @@ class URL(object):
     def canonical(self):
         "Convert URL to its canonical form"
         def full_unescape(u):
+            """
+            Undo escaping of special characters in url
+            """
             uu = urllib.parse.unquote(u)
             if uu == u:
                 return uu
             else:
                 return full_unescape(uu)
 
-        def quote(s):
+        def quote(unsafe_string):
+            """
+            Returns url safe representation of input with special characters escaped
+            """
             safe_chars = '!"$&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-            return urllib.parse.quote(s, safe=safe_chars)
+            return urllib.parse.quote(unsafe_string, safe=safe_chars)
         url = self.url.strip()
         url = url.replace('\n', '').replace('\r', '').replace('\t', '')
         url = url.split('#', 1)[0]
@@ -424,7 +431,7 @@ class URL(object):
         path = posixpath.normpath(path).replace('//', '/')
         if has_trailing_slash and path[-1] != '/':
             path = path + '/'
-        user = url_parts.username
+        _user = url_parts.username
         port = url_parts.port
         host = host.strip('.')
         host = re.sub(r'\.+', '.', host).lower()
@@ -436,7 +443,7 @@ class URL(object):
         if host.startswith('0x') and '.' not in host:
             try:
                 host = socket.gethostbyname(host)
-            except socket.gaierror as e:
+            except socket.gaierror:
                 pass
         if path == '':
             path = '/'
@@ -455,6 +462,9 @@ class URL(object):
         """Try all permutations of hostname and path which can be applied
         to blacklisted URLs"""
         def url_host_permutations(host):
+            """
+            Generator to get all the allowed permutations for the host part of the url
+            """
             if re.match(r'\d+\.\d+\.\d+\.\d+', host):
                 yield host
                 return
@@ -466,6 +476,9 @@ class URL(object):
                 yield '.'.join(parts[i - l:])
 
         def url_path_permutations(path):
+            """
+            Generator to get all the allowed permutations of the path part of the url
+            """
             if path != '/':
                 yield path
             query = None
@@ -478,16 +491,15 @@ class URL(object):
             for i in range(min(4, len(path_parts))):
                 curr_path = curr_path + path_parts[i] + '/'
                 yield curr_path
-        protocol, address_str = urllib.parse.splittype(url)
+        _protocol, address_str = urllib.parse.splittype(url)
         host, path = urllib.parse.splithost(address_str)
-        user, host = urllib.parse.splituser(host)
-        host, port = urllib.parse.splitport(host)
+        _user, host = urllib.parse.splituser(host)
+        host, _port = urllib.parse.splitport(host)
         host = host.strip('/')
         for h in url_host_permutations(host):
             for p in url_path_permutations(path):
                 yield '%s%s' % (h, p)
 
-    # FXIME: todo
     @staticmethod
     def digest(url):
         "Hash the URL"

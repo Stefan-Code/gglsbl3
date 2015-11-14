@@ -4,8 +4,8 @@ import os
 import sqlite3
 import binascii
 import itertools
-from gglsbl3 import logger
-log = logger.Logger("protocol").get()
+import logging
+log = logging.getLogger('gglsbl3')
 
 
 class StorageBase(object):
@@ -40,7 +40,7 @@ class StorageBase(object):
     def expand_ranges(list_of_ranges):
         """Do the opposite of compress_ranges()
 
-        E.g. '1-4,7' -> [1,2,3,4,7]
+        E.g. ['1-4,7', '9-11'] -> [1,2,3,4,7,9,10,11]
         """
         nums = []
         for ranges in list_of_ranges:
@@ -56,7 +56,7 @@ class StorageBase(object):
                         r2 = int(r2) + 1
                         nums.extend(range(r1, r2))
                     except ValueError as e:
-                        log.error('Failed to parse chunk range "%s"' % r)
+                        log.error('Failed to parse chunk range {chunk_range} - {e}'.format(chunk_range=r, e=e))
                         raise
         return nums
 
@@ -159,7 +159,6 @@ class SqliteStorage(StorageBase):
             metadata_values = metadata_info[1]
             log.debug("list_name: {list_name}".format(list_name=list_name))
             for hash_value, metadata_value in itertools.zip_longest(hash_values, metadata_values):
-                # log.debug("hash_value type: "+str(type(hash_value))+" "+ hash_value.decode("cp437", errors='ignore'))
                 if metadata_value is None:
                     metadata_value = 0
                 log.debug("metadata value is: {metadata_value}".format(metadata_value=metadata_value))
@@ -249,9 +248,9 @@ class SqliteStorage(StorageBase):
                 chunks = [int(c) for c in chunks.split(',')]
                 output[list_name][chunk_type] = self.compress_ranges(chunks)
         return output
-    
+
     # FiXME: add stats about number of chunks, number of fullhashes
-    
+
     def total_cleanup(self):
         "Reset local cache"
         q = 'DROP TABLE hash_prefix'
@@ -262,6 +261,6 @@ class SqliteStorage(StorageBase):
         self.dbc.execute(q)
         self.db.commit()
         self.init_db()
-    
+
     def close(self):
         self.db.close()

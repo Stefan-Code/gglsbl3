@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
 from .storage import SqliteStorage
-from . import logger
+import logging
 import binascii
 
-log = logger.Logger("client").get()
+log = logging.getLogger('gglsbl3')
 
 
 class SafeBrowsingList(object):
@@ -58,17 +58,23 @@ class SafeBrowsingList(object):
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 
     def lookup_url(self, url):
+        """
+        Lookup a URL in the local database.
+        Returns a list of "google list names" if the URL is found in one, otherwise None
+        """
         # FIXME: Missing docstring
-        # The following fails if the list is empty
-        # return [x["list"] for x in self.lookup_url_with_metadata(url)]  # this retains backwards compability with clients not expecting the dictionary that includes metadata
         looked_up = self.lookup_url_with_metadata(url)
         if looked_up:
             return [x["list"] for x in looked_up]
         else:
             return None
-        
+
     def lookup_url_with_metadata(self, url):
-        "Look up URL in Safe Browsing blacklists"
+        """
+        Lookup a URL in the local database.
+        Returns a list of dictionaries containing the list name and metadata if the URL is found in one,
+        otherwise None
+        """
         url_hashes = URL(url).hashes
         # log.debug(url_hashes)
         for url_hash in url_hashes:
@@ -82,8 +88,9 @@ class SafeBrowsingList(object):
 
         Returns names of lists it was found in.
         """
-        log.debug('looking up "{full_hash}"'.format(full_hash=binascii.hexlify(full_hash).decode("ascii")))
+        log.debug('looking up "%s"', binascii.hexlify(full_hash).decode("ascii"))
         hash_prefix = full_hash[0:4]
+        log.debug('looking up hash prefix "%s"', binascii.hexlify(hash_prefix).decode("ascii"))
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):
                 self._sync_full_hashes(hash_prefix)

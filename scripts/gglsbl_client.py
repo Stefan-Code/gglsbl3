@@ -13,8 +13,7 @@ import sys
 import time
 import os
 import logging
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+log = logging.getLogger('gglsbl3')
 try:
     from gglsbl3 import SafeBrowsingList
 except ImportError:  # some magic to allow usage even when gglsbl3 is not installed (i.e. in the Python Path)
@@ -54,8 +53,17 @@ def setupArgsParser():
     return parser
 
 # FIXME: move logging stuff to here. Beware of the scope
-def setupLogger(log_file, debug):
-    pass
+def setup_logger(log_file, debug):
+    ch = logging.StreamHandler(sys.stdout)
+    if debug:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s: %(message)s - %(filename)s:%(lineno)d')
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+    log.setLevel(logging.DEBUG)
+    log.debug('DUMMY: setting up logging in file %s with debug = %s', log_file, debug)
 
 
 def run_sync(sbl):
@@ -78,7 +86,7 @@ def main():
     # catch exceptions individually and provide info on how to fix them
     args_parser = setupArgsParser()
     args = args_parser.parse_args()
-    setupLogger(args.log, args.debug)
+    setup_logger(args.log, args.debug)
     # FIXME: Sync before lookup?
     if args.check_url:
         # FIXME: check for validity of API KEY, e.g. min-length
