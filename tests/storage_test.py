@@ -55,7 +55,11 @@ class StorageTest(unittest.TestCase):
     def test_chunk_not_exists(self):
         ok_(not self.storage.chunk_exists(self.fake_chunk_other))
 
-        
+    def test_get_existing_chunks(self):
+        self.test_store_chunk()
+        existing_chunks = self.storage.get_existing_chunks()
+        eq_(existing_chunks['goog-malware-shavar']['sub'], '214212')
+
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']
