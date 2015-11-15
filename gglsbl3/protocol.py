@@ -439,7 +439,8 @@ class URL(object):
             try:
                 host = socket.gethostbyname(host)
                 log.debug("after gethostbyname host is now %s", host)
-            except socket.gaierror:
+            except socket.gaierror as e:
+                log.debug("gethostbyname failed for host %s (%s)", host, e)
                 pass
         if host.startswith('0x') and '.' not in host:
             try:
