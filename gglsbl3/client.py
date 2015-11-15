@@ -31,7 +31,7 @@ class SafeBrowsingList(object):
         "Sync locally stored hash prefixes with remote server"
         existing_chunks = self.storage.get_existing_chunks()
         log.debug("%d existing chunks in database", len(existing_chunks))
-        response = self.prefixListProtocolClient.retrieveMissingChunks(existing_chunks=existing_chunks)
+        response = self.prefixListProtocolClient.retrieve_missing_chunks(existing_chunks=existing_chunks)
         if response.reset_required:
             log.warning("Database reset is required!")
             self.storage.total_cleanup()
@@ -56,7 +56,7 @@ class SafeBrowsingList(object):
         if not self.storage.full_hash_sync_required(hash_prefix):
             log.debug('Cached full hash entries are still valid for "%s", no sync required.', binascii.hexlify(hash_prefix).decode("ascii"))
             return
-        full_hashes = self.fullHashProtocolClient.getHashes([hash_prefix])
+        full_hashes = self.fullHashProtocolClient.get_hashes([hash_prefix])
         log.debug("got full hashes: %s", full_hashes)
         if not full_hashes:
             return

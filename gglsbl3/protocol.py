@@ -188,7 +188,7 @@ class DataResponse(object):
         log.debug("decoded %d chunks", len(decoded_chunks))
         return decoded_chunks
 
-    def _fetchChunks(self, url):
+    def _fetch_chunks(self, url):
         "Download chunks of data containing hash prefixes"
         log.debug("fetching chunk %s", format_max_len(url, max_len=45))
         response = urllib.request.urlopen(url)
@@ -201,7 +201,7 @@ class DataResponse(object):
         for list_name, chunk_urls in list(self.lists_data.items()):
             for chunk_url in chunk_urls:
                 log.debug("processing chunk url: %s", format_max_len(chunk_url, max_len=45))
-                packed_chunks = self._fetchChunks(chunk_url)
+                packed_chunks = self._fetch_chunks(chunk_url)
                 for chunk_data in self._unpack_chunks(packed_chunks):
                     # log.debug("chunk_data: {data}".format(data=chunk_data))
                     chunk = Chunk(chunk_data, list_name)
@@ -215,7 +215,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         super(PrefixListProtocolClient, self).__init__(api_key, discard_fair_use_policy)
         self.set_next_call_timeout(random.randint(0, 300))
 
-    def getLists(self):
+    def get_lists(self):
         "Get available black/white lists"
         log.info('Fetching available lists')
         url = self.make_url('list')
@@ -255,7 +255,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         self.set_next_call_timeout(int(next_delay[2:]))
         return data
 
-    def retrieveMissingChunks(self, existing_chunks=None):
+    def retrieve_missing_chunks(self, existing_chunks=None):
         """Get list of changes from the remote server
 
         and return them as DataResponse object
@@ -350,7 +350,7 @@ class FullHashProtocolClient(BaseProtocolClient):
             metadata[list_name] = metadata_strings_parsed
         return hashes, metadata
 
-    def getHashes(self, hash_prefixes):
+    def get_hashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
         debug_prefixes = [binascii.hexlify(hash_prefix).decode("ascii") for hash_prefix in hash_prefixes]
         log.info('Downloading hashes for hash prefixes %s', debug_prefixes)
