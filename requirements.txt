@@ -4,3 +4,4 @@ httpretty==0.8.4
 python3-protobuf==2.5.0
 coverage==3.7.1
 coveralls==1.1
+bumpversion==0.5.3
