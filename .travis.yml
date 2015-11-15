@@ -1,13 +1,20 @@
 language: python
 python:
-  - "3.3"
-  - "3.4"
-  - "3.5"
+- '3.3'
+- '3.4'
+- '3.5'
 install:
-  - pip install -r requirements.txt
-  - pip install -U .
-
+- pip install -r requirements.txt
+- pip install -U .
 script:
-  - nosetests --with-coverage --cover-inclusive --cover-package=gglsbl3
-after_success:
-  coveralls
+- nosetests --with-coverage --cover-inclusive --cover-package=gglsbl3 --logging-level=DEBUG
+after_success: coveralls
+deploy:
+  provider: pypi
+  user: Stefan-Code
+  password:
+    secure: eFYTEWDIIHGlacQHP5KK26mwYpZxYy2I8+OjofgjwVHWbu/v04sfXQByq+M2oDoZ/4zIcvULi0dPM+bnRL6sTiSDQFo2BmoWKlcfKiKgg0Ggzjli8jmHMUZu1znxqqc51Boe2oojQ6yUhdGsFVpVW0d8dhvadH1oNfP+PSjzM/k=
+  on:
+    tags: true
+    repo: Stefan-Code/gglsbl3
+    branch: master
