@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Protocol module mainly for Python representations of objects from the google API
 """
@@ -169,7 +168,7 @@ class DataResponse(object):
                 chunk_id = l.split(':')[1]
                 self.del_sub_chunks.append(chunk_id)
             else:
-                raise RuntimeError('Response line has unexpected prefix: "{prefix}"'.format(prefix=l))
+                raise RuntimeError('Response line has unexpected prefix: "%s"', l)
         self.lists_data = lists_data
 
     def _unpack_chunks(self, chunkDataFH):
@@ -263,7 +262,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         """
         if existing_chunks is None:
             existing_chunks = {}
-        log.info('Retrieving prefixes')
+        log.info('Retrieving prefixes with %d existing chunks', len(existing_chunks))
         log.debug('existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
         log.info("raw data length: %d", len(raw_data))

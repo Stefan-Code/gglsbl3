@@ -30,19 +30,24 @@ class SafeBrowsingList(object):
     def update_hash_prefix_cache(self):
         "Sync locally stored hash prefixes with remote server"
         existing_chunks = self.storage.get_existing_chunks()
+        log.debug("%d existing chunks in database", len(existing_chunks))
         response = self.prefixListProtocolClient.retrieveMissingChunks(existing_chunks=existing_chunks)
         if response.reset_required:
+            log.warning("Database reset is required!")
             self.storage.total_cleanup()
         try:
             self.storage.del_add_chunks(response.del_add_chunks)
             self.storage.del_sub_chunks(response.del_sub_chunks)
+            log.debug("got %d chunks in response", len(response.chunks))
             for chunk in response.chunks:
                 if self.storage.chunk_exists(chunk):
                     log.debug('chunk #%d of type %s exists in stored list %s, skipping',
                               chunk.chunk_number, chunk.chunk_type, chunk.list_name)
                     continue
                 self.storage.store_chunk(chunk)
-        except:
+        except Exception as e:
+            log.error("Encountered unknown error while updating hash prefix cache (%s)", e)
+            log.warning("Rolling back database because of error")
             self.storage.db.rollback()
             raise
 
