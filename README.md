@@ -4,6 +4,7 @@ gglsbl3
 Python 3 client library for the Google Safe Browsing API (v3)
 
 [![Build Status](https://travis-ci.org/Stefan-Code/gglsbl3.svg)](https://travis-ci.org/Stefan-Code/gglsbl3)
+[![Build status](https://ci.appveyor.com/api/projects/status/m0x4rrd27mxfarf4/branch/master?svg=true)](https://ci.appveyor.com/project/Stefan-Code/gglsbl3/branch/master)
 [![Coverage Status](https://coveralls.io/repos/Stefan-Code/gglsbl3/badge.svg?branch=master&service=github)](https://coveralls.io/github/Stefan-Code/gglsbl3?branch=master)
 
 The original code this project is based on can be found [here in afilipovich's repo](https://github.com/afilipovich/gglsbl). It was changed to support Python 3 (exclusively) and stuff like Unit Tests was added and a few more features introduced (like the ability to get the metadata for a match in the Google Safe Browsing List)
