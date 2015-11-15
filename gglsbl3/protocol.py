@@ -15,10 +15,9 @@ import binascii
 import logging
 from io import BytesIO
 
-import gglsbl3.util
+from gglsbl3 import util
 from gglsbl3 import protobuf_pb2
 from gglsbl3 import MalwarePatternType_pb2
-from gglsbl3.util import format_max_len
 
 log = logging.getLogger('gglsbl3')
 
@@ -69,7 +68,7 @@ class BaseProtocolClient(object):
         if delay < 0:
             log.error("got negative delay: '%s', will not sleep", delay)
         elif not self.discard_fair_use_policy:
-            log.info('Sleeping for %s', gglsbl3.util.prettify_seconds(delay))
+            log.info('Sleeping for %s', util.prettify_seconds(delay))
             time.sleep(delay)
         else:
             log.debug("didn't sleep because of settings")
@@ -190,7 +189,7 @@ class DataResponse(object):
 
     def _fetch_chunks(self, url):
         "Download chunks of data containing hash prefixes"
-        log.debug("fetching chunk %s", format_max_len(url, max_len=45))
+        log.debug("fetching chunk %s", util.format_max_len(url, max_len=45))
         response = urllib.request.urlopen(url)
         return response
 
@@ -200,7 +199,7 @@ class DataResponse(object):
         log.debug("accessing chunks")
         for list_name, chunk_urls in list(self.lists_data.items()):
             for chunk_url in chunk_urls:
-                log.debug("processing chunk url: %s", format_max_len(chunk_url, max_len=45))
+                log.debug("processing chunk url: %s", util.format_max_len(chunk_url, max_len=45))
                 packed_chunks = self._fetch_chunks(chunk_url)
                 for chunk_data in self._unpack_chunks(packed_chunks):
                     # log.debug("chunk_data: {data}".format(data=chunk_data))
@@ -437,7 +436,7 @@ class URL(object):
         if host.isdigit():
             log.debug("Host is digit: %s", host)
             try:
-                host = socket.gethostbyname(host)
+                host = util.int_to_ip(int(host))
                 log.debug("after gethostbyname host is now %s", host)
             except socket.gaierror as e:
                 log.warning("gethostbyname failed for host %s (%s)", host, e)
