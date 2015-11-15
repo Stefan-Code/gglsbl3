@@ -144,7 +144,11 @@ class SqliteStorage(StorageBase):
             VALUES (?, ?, ?, ?)'
         params = [hash_prefix[k] for k in
                         ('value', 'chunk_number', 'list_name', 'chunk_type')]
-        self.dbc.execute(q, params)
+        try:
+            self.dbc.execute(q, params)
+        except sqlite3.IntegrityError as e:
+            log.warning("Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
+
 
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"
@@ -165,7 +169,7 @@ class SqliteStorage(StorageBase):
                 log.debug('storing hash: "{hash}"'.format(hash=binascii.hexlify(hash_value).decode("ascii")))
                 q = "INSERT INTO full_hash (value, list_name, metadata, downloaded_at, expires_at)\
                     VALUES (?, ?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
-                q = q % cache_lifetime  # FIXME, use .format or something sql specific instead
+                q = q % cache_lifetime
                 log.debug(q)
                 self.dbc.execute(q, [sqlite3.Binary(hash_value), list_name, metadata_value])
         q = "UPDATE hash_prefix SET full_hash_expires_at=datetime(current_timestamp, '+%d SECONDS') \
