@@ -435,8 +435,10 @@ class URL(object):
         host = host.strip('.')
         host = re.sub(r'\.+', '.', host).lower()
         if host.isdigit():
+            log.debug("Host is digit: %s", host)
             try:
                 host = socket.gethostbyname(host)
+                log.debug("after gethostbyname host is now %s", host)
             except socket.gaierror:
                 pass
         if host.startswith('0x') and '.' not in host:
