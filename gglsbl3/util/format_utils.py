@@ -14,7 +14,7 @@ def prettify_seconds(seconds):
     '3 days, 23 hours, 9 minutes and 3 seconds'
     """
     if seconds < 0:
-        raise Exception("negative input not allowed")
+        raise ValueError("negative input not allowed")
     signs = {"s": {"singular": "second", "plural": "seconds", },
              "h": {"singular": "hour", "plural": "hours"},
              "min": {"singular": "minute", "plural": "minutes"},
