@@ -5,6 +5,7 @@ import sqlite3
 import binascii
 import itertools
 import logging
+from base64 import b64encode
 log = logging.getLogger('gglsbl3')
 
 
@@ -152,7 +153,7 @@ class SqliteStorage(StorageBase):
 
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"
-        log.debug("storing full hashes for %s", binascii.hexlify(hash_prefix))
+        log.debug("storing full hashes for %s", binascii.hexlify(hash_prefix).decode('ascii'))
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
         for hash_info, metadata_info in itertools.zip_longest(list(hashes['hashes'].items()), list(hashes['metadata'].items())):
@@ -171,7 +172,6 @@ class SqliteStorage(StorageBase):
                 q = "INSERT INTO full_hash (value, list_name, metadata, downloaded_at, expires_at)\
                     VALUES (?, ?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
                 q = q % cache_lifetime
-                log.debug(q)
                 self.dbc.execute(q, [sqlite3.Binary(hash_value), list_name, metadata_value])
         q = "UPDATE hash_prefix SET full_hash_expires_at=datetime(current_timestamp, '+%d SECONDS') \
             WHERE chunk_type='add' AND value=?"

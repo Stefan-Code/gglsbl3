@@ -57,14 +57,14 @@ class SafeBrowsingList(object):
     def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
-            log.debug('Cached full hash entries are still valid for "%s", no sync required.', binascii.hexlify(hash_prefix).decode("ascii"))
+            log.debug('Cached full hash entries are still valid for %s, no sync required.', binascii.hexlify(hash_prefix).decode("ascii"))
             return
         else:
-            log.debug("Full hash sync required for %s", binascii.hexlify(hash_prefix))
+            log.debug("Full hash sync required for %s", binascii.hexlify(hash_prefix).decode("ascii"))
         full_hashes = self.full_hash_protocol_client.get_hashes([hash_prefix])
         log.debug("got full hashes: %s", full_hashes)
         if not full_hashes:
-            log.debug("didn't get any full hashes")
+            log.debug("didn't get any full hashes for %s", binascii.hexlify(hash_prefix).decode("ascii"))
             return
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 

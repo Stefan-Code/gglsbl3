@@ -14,6 +14,7 @@ import socket
 import binascii
 import logging
 from io import BytesIO
+from base64 import b64encode
 
 from gglsbl3 import util
 from gglsbl3 import protobuf_pb2
@@ -75,7 +76,7 @@ class BaseProtocolClient(object):
 
     def api_call(self, url, payload=None):
         "Perform a call to Safe Browsing API"
-        log.debug("performing api call to %s", url)
+        log.debug("performing api call to %s", util.format_max_len(url, 35))
         if payload is None:
             payload = b''
         if isinstance(payload, str):
@@ -296,7 +297,7 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def _parse_hash_entry(self, hash_entry):
         "Parse full-sized hash entry"
-        log.debug("parsing hash entry for %s", hash_entry)
+        log.debug("parsing hash entry for (b64) %s", b64encode(hash_entry))
         hashes = {}
         metadata = {}
         while True:
@@ -364,7 +365,7 @@ class FullHashProtocolClient(BaseProtocolClient):
         #  payload = '%s\n%s' % (p_header, p_body)
 
         response = self.api_call(url, payload)
-        log.debug("response: %s", str(response))
+        log.debug("response (b64): %s", b64encode(response))
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parse_hash_entry(response)
