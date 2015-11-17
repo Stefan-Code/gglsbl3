@@ -1,7 +1,5 @@
 '''
-Created on May 7, 2015
-
-@author: sk
+This module provides utility functions to format data
 '''
 
 def prettify_seconds(seconds):
@@ -40,7 +38,7 @@ def prettify_seconds(seconds):
     else:
         secondstext = "{} {}".format(seconds, get_sign("s", seconds))
     output_list = [daystext, hourstext, minutestext, secondstext]
-    filtered = list(filter(None, output_list))
+    filtered = [item for item in output_list if item]
     if len(filtered) <= 2:
         output = last_seperator.join(filtered)
     else:

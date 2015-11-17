@@ -21,7 +21,10 @@ class SafeBrowsingList(object):
         discard_fair_use_policy: If set to True, do not sleep between requests
                                  as required by google
         """
-        self.prefix_list_protocol_client = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
+        self.prefix_list_protocol_client = PrefixListProtocolClient(
+            api_key,
+            discard_fair_use_policy=discard_fair_use_policy
+            )
         self.full_hash_protocol_client = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
 
@@ -35,7 +38,12 @@ class SafeBrowsingList(object):
     def update_hash_prefix_cache(self):
         "Sync locally stored hash prefixes with remote server"
         existing_chunks = self.storage.get_existing_chunks()
-        response = self.prefix_list_protocol_client.retrieve_missing_chunks(existing_chunks=existing_chunks)
+        response = self.prefix_list_protocol_client.retrieve_missing_chunks(
+            existing_chunks=existing_chunks
+            )
+        log.debug("Response contains %d add-chunks and %d sub-chunks",
+                  len(response.del_add_chunks),
+                  len(response.del_sub_chunks))
         if response.reset_required:
             log.warning("Database reset is required!")
             self.storage.total_cleanup()
@@ -57,14 +65,17 @@ class SafeBrowsingList(object):
     def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
         if not self.storage.full_hash_sync_required(hash_prefix):
-            log.debug('Cached full hash entries are still valid for %s, no sync required.', binascii.hexlify(hash_prefix).decode("ascii"))
+            log.debug('Cached full hash entries are still valid for %s, no sync required.',
+                      binascii.hexlify(hash_prefix).decode("ascii"))
             return
         else:
-            log.debug("Full hash sync required for %s", binascii.hexlify(hash_prefix).decode("ascii"))
+            log.debug("Full hash sync required for %s",
+                      binascii.hexlify(hash_prefix).decode("ascii"))
         full_hashes = self.full_hash_protocol_client.get_hashes([hash_prefix])
         log.debug("got full hashes: %s", full_hashes)
         if not full_hashes:
-            log.debug("didn't get any full hashes for %s", binascii.hexlify(hash_prefix).decode("ascii"))
+            log.debug("didn't get any full hashes for %s",
+                      binascii.hexlify(hash_prefix).decode("ascii"))
             return
         self.storage.store_full_hashes(hash_prefix, full_hashes)
 
@@ -82,7 +93,8 @@ class SafeBrowsingList(object):
     def lookup_url_with_metadata(self, url):
         """
         Lookup a URL in the local database.
-        Returns a list of dictionaries containing the list name and metadata if the URL is found in one,
+        Returns a list of dictionaries containing the list name
+        and metadata if the URL is found in one,
         otherwise None
         """
         url_hashes = URL(url).hashes
@@ -109,6 +121,7 @@ class SafeBrowsingList(object):
             else:
                 log.debug('hash not in database')
         except Exception as e:
-            log.error('Unknown error while looking up hash "%s" (%s)', binascii.hexlify(full_hash), e)
+            log.error('Unknown error while looking up hash "%s" (%s)',
+                      binascii.hexlify(full_hash), e)
             self.storage.db.rollback()
             raise
