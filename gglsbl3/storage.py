@@ -152,6 +152,7 @@ class SqliteStorage(StorageBase):
 
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"
+        log.debug("storing full hashes for %s", binascii.hexlify(hash_prefix))
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
         for hash_info, metadata_info in itertools.zip_longest(list(hashes['hashes'].items()), list(hashes['metadata'].items())):

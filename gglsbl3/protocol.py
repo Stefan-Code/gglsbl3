@@ -75,7 +75,7 @@ class BaseProtocolClient(object):
 
     def api_call(self, url, payload=None):
         "Perform a call to Safe Browsing API"
-        log.debug("performing api call to %s with payload: %s", url, payload)
+        log.debug("performing api call to %s", url)
         if payload is None:
             payload = b''
         if isinstance(payload, str):
@@ -225,7 +225,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
     def _fetchData(self, existing_chunks):
         "Get references to data chunks containing hash prefixes"
-        log.debug("chunks: %s", existing_chunks)
+        #  log.debug("chunks: %s", existing_chunks)  # way too much output
         self.fair_use_delay()
         url = self.make_url('downloads')
         payload = []
@@ -261,8 +261,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         """
         if existing_chunks is None:
             existing_chunks = {}
-        log.info('Retrieving prefixes with %d existing chunks', len(existing_chunks))
-        log.debug('existing_chunks: %s', existing_chunks)
+        #  log.debug('existing_chunks: %s', existing_chunks)  # way too much output
         raw_data = self._fetchData(existing_chunks)
         log.info("raw data length: %d", len(raw_data))
         # log.debug("got raw data: %s", str(raw_data))  # this produces way too much output!
