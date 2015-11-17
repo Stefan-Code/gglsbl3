@@ -194,7 +194,7 @@ class SqliteStorage(StorageBase):
         q = 'SELECT list_name, metadata FROM full_hash WHERE value=?'
         self.dbc.execute(q, [sqlite3.Binary(hash_value)])
         fetched = self.dbc.fetchall()
-        log.debug("fetched from database: {fetched}".format(fetched=fetched))
+        log.debug("fetched from database: %s", fetched)
         return [{"list": h[0], "metadata": h[1]} for h in fetched]
 
     def lookup_hash_prefix(self, hash_prefix):
