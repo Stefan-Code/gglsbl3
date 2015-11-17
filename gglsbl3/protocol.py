@@ -21,7 +21,7 @@ from gglsbl3 import protobuf_pb2
 from gglsbl3 import MalwarePatternType_pb2
 
 log = logging.getLogger('gglsbl3')
-
+TRACE = 5
 
 class BaseProtocolClient(object):
     """
@@ -171,20 +171,19 @@ class DataResponse(object):
                 raise RuntimeError('Response line has unexpected prefix: "%s"', l)
         self.lists_data = lists_data
 
-    def _unpack_chunks(self, chunkDataFH):
+    def _unpack_chunks(self, chunk_data_fh):
         "Unroll data chunk containing hash prefixes"
-        # log.debug("unpacking chunk data: {data}".format(data=chunkDataFH.read()))
         decoded_chunks = []
         while True:
-            packed_size = chunkDataFH.read(4)
+            packed_size = chunk_data_fh.read(4)
             if len(packed_size) < 4:
                 break
             size = struct.unpack(">L", packed_size)[0]
-            chunk_data = chunkDataFH.read(size)
+            chunk_data = chunk_data_fh.read(size)
             decoded_chunk = protobuf_pb2.ChunkData()
             decoded_chunk.ParseFromString(chunk_data)
             decoded_chunks.append(decoded_chunk)
-            # log.debug("sucessfully decoded chunk: %s", decoded_chunk)  # This produces way too much ouput
+            log.log(TRACE, "sucessfully decoded chunk: %s", decoded_chunk)
         log.debug("decoded %d chunks", len(decoded_chunks))
         return decoded_chunks
 
@@ -226,7 +225,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
     def _fetchData(self, existing_chunks):
         "Get references to data chunks containing hash prefixes"
-        #  log.debug("chunks: %s", existing_chunks)  # way too much output
+        log.log(TRACE, "chunks: %s", existing_chunks)
         self.fair_use_delay()
         url = self.make_url('downloads')
         payload = []
@@ -262,10 +261,10 @@ class PrefixListProtocolClient(BaseProtocolClient):
         """
         if existing_chunks is None:
             existing_chunks = {}
-        #  log.debug('existing_chunks: %s', existing_chunks)  # way too much output
+        log.log(TRACE, 'existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
         log.info("raw data length: %d", len(raw_data))
-        # log.debug("got raw data: %s", str(raw_data))  # this produces way too much output!
+        log.log(TRACE, "got raw data: %s", str(raw_data))
         preparsed_data = self._preparse_data(raw_data)
         d = DataResponse(preparsed_data)
         return d
