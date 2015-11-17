@@ -14,7 +14,13 @@ class SafeBrowsingList(object):
     """
 
     def __init__(self, api_key, db_path='./gsb_v3.db', discard_fair_use_policy=False):
-        # FIXME: missing docstring
+        """
+        Initialize SafeBrowsingList instance.
+        api_key: Your google safe browsing v3 API key
+        db_path: Path to the SQLite database to be used
+        discard_fair_use_policy: If set to True, do not sleep between requests
+                                 as required by google
+        """
         self.prefixListProtocolClient = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
         self.fullHashProtocolClient = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
@@ -97,8 +103,11 @@ class SafeBrowsingList(object):
         log.debug('looking up hash prefix "%s"', binascii.hexlify(hash_prefix).decode("ascii"))
         try:
             if self.storage.lookup_hash_prefix(hash_prefix):
+                log.debug('hash in database')
                 self._sync_full_hashes(hash_prefix)
                 return self.storage.lookup_full_hash(full_hash)
+            else:
+                log.debug('hash not in database')
         except Exception as e:
             log.error('Unknown error while looking up hash "%s" (%s)', binascii.hexlify(full_hash), e)
             self.storage.db.rollback()
