@@ -25,6 +25,8 @@ class SafeBrowsingListTestCase(unittest.TestCase):
             "http://195.127.0.11/uploads/%20%20%20%20/.verify/.eBaysecure=updateuserdataxplimnbqmn-xplmvalidateinfoswqpcmlx=hgplmcx/": "http://195.127.0.11/uploads/%20%20%20%20/.verify/.eBaysecure=updateuserdataxplimnbqmn-xplmvalidateinfoswqpcmlx=hgplmcx/",
             "http://host%23.com/%257Ea%2521b%2540c%2523d%2524e%25f%255E00%252611%252A22%252833%252944_55%252B": "http://host%23.com/~a!b@c%23d$e%25f^00&11*22(33)44_55+",
             "http://3279880203/blah": "http://195.127.0.11/blah",
+            "http://3279880203/blah": "http://195.127.0.11/blah",
+            "http://0xc37f000b/blah": "http://195.127.0.11/blah",
             "http://www.google.com/blah/..": "http://www.google.com/",
             "www.google.com/": "http://www.google.com/",
             "www.google.com": "http://www.google.com/",
@@ -49,6 +51,7 @@ class SafeBrowsingListTestCase(unittest.TestCase):
             "http://host.com/ab%23cd": "http://host.com/ab%23cd",
             "http://host.com//twoslashes?more//slashes": "http://host.com/twoslashes?more//slashes",
             "http://www.wtp101.com/bk?redir=http%3A%2F%2Ftags.bluekai.com%2Fsite%2F2750%3Fid%3D%3CPARTNER_UUID%3E%0D%0A%26redir%3Dhttp%3A%2F%2Fwww.wtp101.com%2Fpush%2Fbluekai%3Fxid%3D%24BK_UUID": "http://www.wtp101.com/bk?redir=http://tags.bluekai.com/site/2750?id=<PARTNER_UUID>%0D%0A&redir=http://www.wtp101.com/push/bluekai?xid=$BK_UUID",
+            "google.com": "http://google.com/",
         }
 
         self.url_permutations = {
