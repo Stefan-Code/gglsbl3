@@ -435,18 +435,12 @@ class URL(object):
         host = re.sub(r'\.+', '.', host).lower()
         if host.isdigit():
             log.debug("Host is digit: %s", host)
-            try:
-                host = util.int_to_ip(int(host))
-                log.debug("after gethostbyname host is now %s", host)
-            except socket.gaierror as e:
-                log.warning("gethostbyname failed for host %s (%s)", host, e)
-                pass
+            host = util.int_to_ip(int(host))
+            log.debug("after conversion host is now %s", host)
         if host.startswith('0x') and '.' not in host:
-            try:
-                host = socket.gethostbyname(host)
-            except socket.gaierror as e:
-                log.warning("gethostbyname failed for host %s (%s)", host, e)
-                pass
+            log.debug("Host is hex: %s", host)
+            host = util.int_to_ip(int(host, 16))
+            log.debug("after conversion host is now %s", host)
         if path == '':
             path = '/'
         quoted_path = quote(path)
