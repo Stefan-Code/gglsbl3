@@ -20,7 +20,7 @@ class ClientTest(unittest.TestCase):
         os.remove(self.db_path)
 
     def testName(self):
-        assert_equal(self.client.fullHashProtocolClient.config["url_args"]["key"], self.api_key)
+        eq_(self.client.full_hash_protocol_client.config["url_args"]["key"], self.api_key)
 
 
 if __name__ == "__main__":
