@@ -21,8 +21,8 @@ class SafeBrowsingList(object):
         discard_fair_use_policy: If set to True, do not sleep between requests
                                  as required by google
         """
-        self.prefixListProtocolClient = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
-        self.fullHashProtocolClient = FullHashProtocolClient(api_key)
+        self.prefix_list_protocol_client = PrefixListProtocolClient(api_key, discard_fair_use_policy=discard_fair_use_policy)
+        self.full_hash_protocol_client = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
 
     def _close_storage(self):
@@ -35,7 +35,7 @@ class SafeBrowsingList(object):
     def update_hash_prefix_cache(self):
         "Sync locally stored hash prefixes with remote server"
         existing_chunks = self.storage.get_existing_chunks()
-        response = self.prefixListProtocolClient.retrieve_missing_chunks(existing_chunks=existing_chunks)
+        response = self.prefix_list_protocol_client.retrieve_missing_chunks(existing_chunks=existing_chunks)
         if response.reset_required:
             log.warning("Database reset is required!")
             self.storage.total_cleanup()
@@ -61,7 +61,7 @@ class SafeBrowsingList(object):
             return
         else:
             log.debug("Full hash sync required for %s", binascii.hexlify(hash_prefix))
-        full_hashes = self.fullHashProtocolClient.get_hashes([hash_prefix])
+        full_hashes = self.full_hash_protocol_client.get_hashes([hash_prefix])
         log.debug("got full hashes: %s", full_hashes)
         if not full_hashes:
             log.debug("didn't get any full hashes")
