@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-from .protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
-from .storage import SqliteStorage
+from gglsbl3.protocol import PrefixListProtocolClient, FullHashProtocolClient, URL
+from gglsbl3.storage import SqliteStorage
 import logging
 import binascii
+import sys
 
 log = logging.getLogger('gglsbl3')
 
