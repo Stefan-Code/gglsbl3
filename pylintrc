@@ -1,4 +1,4 @@
 [BASIC]
-good-names=log
+good-names=log,e
 [VARIABLES]
 dummy-variables-rgx=_|dummy
