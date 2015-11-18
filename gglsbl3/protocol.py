@@ -440,8 +440,6 @@ class URL(object):
             log.debug("Host is hex: %s", host)
             host = util.int_to_ip(int(host, 16))
             log.debug("after conversion host is now %s", host)
-        if path == '':
-            path = '/'
         quoted_path = quote(path)
         quoted_host = quote(host)
         if port is not None:
