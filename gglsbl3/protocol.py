@@ -385,12 +385,14 @@ class URL(object):
     "URL representation suitable for lookup"
 
     def __init__(self, url):
+        log.debug('initializing url %s', url)
         self.url = str(url)
 
     @property
     def hashes(self):
         "Hashes of all possible permutations of the URL in canonical form"
         for url_variant in self.url_permutations(self.canonical):
+            log.log(TRACE, 'hashing url variant %s', url_variant)
             url_hash = self.digest(url_variant)
             yield url_hash
 
@@ -418,18 +420,21 @@ class URL(object):
         url = url.split('#', 1)[0]
         url = quote(full_unescape(url))
         url_parts = urllib.parse.urlsplit(url)
+        log.log(TRACE, 'url parts are %s', url_parts)
         if not url_parts[0]:
             url = 'http://%s' % url
             url_parts = urllib.parse.urlsplit(url)
         protocol = url_parts.scheme
         host = full_unescape(url_parts.hostname)
         path = full_unescape(url_parts.path)
+        log.log(TRACE, "url host is '%s' and url path is '%s'", host, path)
         query = url_parts.query
         if not query and '?' not in url:
             query = None
         if not path:
             path = '/'
         has_trailing_slash = (path[-1] == '/')
+        log.log(TRACE, 'url hash trailing slash: %s', has_trailing_slash)
         path = posixpath.normpath(path).replace('//', '/')
         if has_trailing_slash and path[-1] != '/':
             path = path + '/'
@@ -452,6 +457,7 @@ class URL(object):
         canonical_url = '%s://%s%s' % (protocol, quoted_host, quoted_path)
         if query is not None:
             canonical_url = '%s?%s' % (canonical_url, query)
+        log.debug('returning canonical url %s', canonical_url)
         return canonical_url
 
     # FIXME: move these to own module and out of class
@@ -485,6 +491,7 @@ class URL(object):
             if query is not None:
                 yield path
             path_parts = path.split('/')[0:-1]
+            log.log(TRACE, 'path parts are %s', path_parts)
             curr_path = ''
             for i in range(min(4, len(path_parts))):
                 curr_path = curr_path + path_parts[i] + '/'
