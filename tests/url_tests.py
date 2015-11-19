@@ -25,7 +25,6 @@ class SafeBrowsingListTestCase(unittest.TestCase):
             "http://195.127.0.11/uploads/%20%20%20%20/.verify/.eBaysecure=updateuserdataxplimnbqmn-xplmvalidateinfoswqpcmlx=hgplmcx/": "http://195.127.0.11/uploads/%20%20%20%20/.verify/.eBaysecure=updateuserdataxplimnbqmn-xplmvalidateinfoswqpcmlx=hgplmcx/",
             "http://host%23.com/%257Ea%2521b%2540c%2523d%2524e%25f%255E00%252611%252A22%252833%252944_55%252B": "http://host%23.com/~a!b@c%23d$e%25f^00&11*22(33)44_55+",
             "http://3279880203/blah": "http://195.127.0.11/blah",
-            "http://3279880203/blah": "http://195.127.0.11/blah",
             "http://0xc37f000b/blah": "http://195.127.0.11/blah",
             "http://www.google.com/blah/..": "http://www.google.com/",
             "www.google.com/": "http://www.google.com/",
@@ -108,14 +107,14 @@ class SafeBrowsingListTestCase(unittest.TestCase):
             self.assertEqual(URL(nu).canonical, cu)
 
     def test_permutations(self):
-        for k,v in list(self.url_permutations.items()):
+        for k, v in list(self.url_permutations.items()):
             p = list(URL.url_permutations(k))
             self.assertEqual(p, v)
 
 
 class RangesExpansionTestCase(unittest.TestCase):
     def setUp(self):
-        self.expand_ranges =  StorageBase.expand_ranges
+        self.expand_ranges = StorageBase.expand_ranges
 
     def test_double_range(self):
         data = ["138764-138766,139076-139260"]
@@ -126,7 +125,7 @@ class RangesExpansionTestCase(unittest.TestCase):
 
 class RangesCompressionTestCase(unittest.TestCase):
     def setUp(self):
-        self.compress_ranges =  StorageBase.compress_ranges
+        self.compress_ranges = StorageBase.compress_ranges
 
     def test_single_range(self):
         data = [1, 2, 3, 4, 5]
@@ -154,7 +153,7 @@ class RangesCompressionTestCase(unittest.TestCase):
         self.assertEqual(result, '1-4,6-8,15,20-23')
 
     def test_mixed_ranges2(self):
-        data = [1, 3, 4, 6, 7, 8, 15, 20, 21, 22, 23,33]
+        data = [1, 3, 4, 6, 7, 8, 15, 20, 21, 22, 23, 33]
         result = self.compress_ranges(data)
         self.assertEqual(result, '1,3-4,6-8,15,20-23,33')
 
