@@ -114,7 +114,7 @@ def _get_log_level(log_level, debug, trace):
         return logging.FATAL
     elif isinstance(log_level, int):
         return log_level
-    return logging.ERROR  #  this is the default
+    return logging.INFO  #  this is the default
 
 def run_sync(sbl):
     """
@@ -124,7 +124,7 @@ def run_sync(sbl):
     try:
         sbl.update_hash_prefix_cache()
     except (KeyboardInterrupt, SystemExit) as e:
-        log.info('Shutting down')
+        log.warning('Abort by user')
         sys.exit(0)
     except Exception as e:
         log.exception('Failed to synchronize with GSB service: %s', e)
