@@ -10,6 +10,7 @@ from base64 import b64encode
 log = logging.getLogger('gglsbl3')
 TRACE = 5
 
+
 class StorageBase(object):
     @staticmethod
     def compress_ranges(nums):
@@ -23,14 +24,14 @@ class StorageBase(object):
         buf = []
         buf.append(nums[0])
         for i in range(1, len(nums)):
-            if nums[i-1] == nums[i]:
+            if nums[i - 1] == nums[i]:
                 pass
-            elif nums[i] - nums[i-1] == 1:
+            elif nums[i] - nums[i - 1] == 1:
                 if buf[-1] is not None:
                     buf.append(None)
             else:
                 if buf[-1] is None:
-                    buf.append(nums[i-1])
+                    buf.append(nums[i - 1])
                 buf.append(nums[i])
         if buf[-1] is None:
             buf.append(nums[-1])
@@ -145,12 +146,11 @@ class SqliteStorage(StorageBase):
         q = 'INSERT INTO hash_prefix (value, chunk_number, list_name, chunk_type) \
             VALUES (?, ?, ?, ?)'
         params = [hash_prefix[k] for k in
-                        ('value', 'chunk_number', 'list_name', 'chunk_type')]
+                    ('value', 'chunk_number', 'list_name', 'chunk_type')]
         try:
             self.dbc.execute(q, params)
         except sqlite3.IntegrityError as e:
             log.warning("Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
-
 
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"

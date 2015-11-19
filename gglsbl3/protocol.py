@@ -22,6 +22,7 @@ from gglsbl3 import MalwarePatternType_pb2
 log = logging.getLogger('gglsbl3')
 TRACE = 5
 
+
 class BaseProtocolClient(object):
     """
     Base class FullHashProtocolClient and PrefixListProtocolClient inherit from.
@@ -300,7 +301,7 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def _parse_hash_entry(self, hash_entry):
         "Parse full-sized hash entry"
-        log.debug("parsing hash entry for (b64) %s", b64encode(hash_entry))
+        log.log(TRACE, "parsing hash entry for (b64) %s", b64encode(hash_entry))
         hashes = {}
         metadata = {}
         while True:
@@ -369,7 +370,7 @@ class FullHashProtocolClient(BaseProtocolClient):
         #  payload = '%s\n%s' % (p_header, p_body)
 
         response = self.api_call(url, payload)
-        log.debug("response (b64): %s", b64encode(response))
+        log.log(TRACE, "response (b64): %s", b64encode(response))
         first_line, response = response.split(b'\n', 1)
         cache_lifetime = int(first_line.strip())
         hashes, metadata = self._parse_hash_entry(response)
