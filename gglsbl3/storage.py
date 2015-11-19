@@ -6,8 +6,9 @@ import binascii
 import itertools
 import logging
 from base64 import b64encode
-log = logging.getLogger('gglsbl3')
 
+log = logging.getLogger('gglsbl3')
+TRACE = 5
 
 class StorageBase(object):
     @staticmethod
@@ -154,21 +155,21 @@ class SqliteStorage(StorageBase):
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"
         log.debug("storing full hashes for %s", binascii.hexlify(hash_prefix).decode('ascii'))
+        log.log(TRACE, 'storing prefix %s with hashes %s', hash_prefix, hashes)
         self.cleanup_expired_hashes()
         cache_lifetime = hashes['cache_lifetime']
         for hash_info, metadata_info in itertools.zip_longest(list(hashes['hashes'].items()), list(hashes['metadata'].items())):
             list_name_bytes = hash_info[0]
             #  log.debug("list name bytes is: {list_name_bytes}".format(list_name_bytes=list_name_bytes))
             list_name = list_name_bytes.decode("ascii")  # convert the bytestring listname to a 'normal' python string
-            #  log.debug("list_name is {list_name}".format(list_name=list_name))
+            log.log(TRACE, 'storing full hashes for list name %s', list_name)
             hash_values = hash_info[1]
             metadata_values = metadata_info[1]
-            log.debug("list_name: {list_name}".format(list_name=list_name))
             for hash_value, metadata_value in itertools.zip_longest(hash_values, metadata_values):
                 if metadata_value is None:
                     metadata_value = 0
-                log.debug("metadata value is: {metadata_value}".format(metadata_value=metadata_value))
-                log.debug('storing hash: "{hash}"'.format(hash=binascii.hexlify(hash_value).decode("ascii")))
+                log.log(TRACE, "metadata value is: %s", metadata_value)
+                log.debug("storing hash '%s'", binascii.hexlify(hash_value).decode("ascii"))
                 q = "INSERT INTO full_hash (value, list_name, metadata, downloaded_at, expires_at)\
                     VALUES (?, ?, ?, current_timestamp, datetime(current_timestamp, '+%d SECONDS'))"
                 q = q % cache_lifetime
