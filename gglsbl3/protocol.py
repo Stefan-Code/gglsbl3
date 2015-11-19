@@ -159,7 +159,7 @@ class DataResponse(object):
                     url = 'https://%s' % url
                 lists_data[current_list_name].append(url)
             elif line.startswith('r:'):
-                log.warn("Reset is required!")
+                log.warning("Reset is required!")
                 self.reset_required = True
             elif line.startswith('ad:'):
                 chunk_id = line.split(':')[1]
@@ -457,7 +457,7 @@ class URL(object):
         canonical_url = '%s://%s%s' % (protocol, quoted_host, quoted_path)
         if query is not None:
             canonical_url = '%s?%s' % (canonical_url, query)
-        log.debug('returning canonical url %s', canonical_url)
+        log.log(TRACE, 'returning canonical url %s', canonical_url)
         return canonical_url
 
     # FIXME: move these to own module and out of class
