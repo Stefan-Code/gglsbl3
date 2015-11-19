@@ -10,7 +10,6 @@ import random
 import posixpath
 import re
 import hashlib
-import socket
 import binascii
 import logging
 from io import BytesIO
@@ -94,7 +93,8 @@ class BaseProtocolClient(object):
     def make_url(self, service):
         "Generate Safe Browsing API URL"
         url = urllib.parse.urljoin(self.config['base_url'], service)
-        query_params = '&'.join(['%s=%s' % (k, v) for k, v in list(self.config['url_args'].items())])
+        query_params = '&'.join(
+            ['%s=%s' % (k, v) for k, v in list(self.config['url_args'].items())])
         url = '%s?%s' % (url, query_params)
         return url
 
@@ -146,29 +146,29 @@ class DataResponse(object):
     def _parse_data(self, data):
         lists_data = {}
         current_list_name = None
-        for l in data:
-            l = l.strip()
-            if not l:
+        for line in data:
+            line = line.strip()
+            if not line:
                 continue
-            if l.startswith('i:'):
-                current_list_name = l.strip()[2:]
+            if line.startswith('i:'):
+                current_list_name = line.strip()[2:]
                 lists_data[current_list_name] = []
-            elif l.startswith('u:'):
-                url = l[2:]
+            elif line.startswith('u:'):
+                url = line[2:]
                 if not url.startswith('https://'):
                     url = 'https://%s' % url
                 lists_data[current_list_name].append(url)
-            elif l.startswith('r:'):
+            elif line.startswith('r:'):
                 log.warn("Reset is required!")
                 self.reset_required = True
-            elif l.startswith('ad:'):
-                chunk_id = l.split(':')[1]
+            elif line.startswith('ad:'):
+                chunk_id = line.split(':')[1]
                 self.del_add_chunks.append(chunk_id)
-            elif l.startswith('sd:'):
-                chunk_id = l.split(':')[1]
+            elif line.startswith('sd:'):
+                chunk_id = line.split(':')[1]
                 self.del_sub_chunks.append(chunk_id)
             else:
-                raise RuntimeError('Response line has unexpected prefix: "%s"', l)
+                raise RuntimeError('Response line has unexpected prefix: "%s"', line)
         self.lists_data = lists_data
 
     def _unpack_chunks(self, chunk_data_fh):
@@ -209,7 +209,9 @@ class DataResponse(object):
 
 
 class PrefixListProtocolClient(BaseProtocolClient):
-
+    """
+    API client for the truncated hashes (called prefixes)
+    """
     def __init__(self, api_key, discard_fair_use_policy=False):
         super(PrefixListProtocolClient, self).__init__(api_key, discard_fair_use_policy)
         self.set_next_call_timeout(random.randint(0, 300))
@@ -271,7 +273,9 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
 
 class FullHashProtocolClient(BaseProtocolClient):
-
+    """
+    API client using full length hashes instead of prefixes
+    """
     def fair_use_delay(self):
         """Throttle queries according to Request Frequency policy
 
@@ -350,7 +354,8 @@ class FullHashProtocolClient(BaseProtocolClient):
 
     def get_hashes(self, hash_prefixes):
         "Download and parse full-sized hash entries"
-        debug_prefixes = [binascii.hexlify(hash_prefix).decode("ascii") for hash_prefix in hash_prefixes]
+        debug_prefixes = [binascii.hexlify(hash_prefix).decode("ascii")
+                          for hash_prefix in hash_prefixes]
         log.info('Downloading hashes for hash prefixes %s', debug_prefixes)
         url = self.make_url('gethash')
         prefix_len = len(hash_prefixes[0])
@@ -392,15 +397,15 @@ class URL(object):
     @property
     def canonical(self):
         "Convert URL to its canonical form"
-        def full_unescape(u):
+        def full_unescape(url):
             """
             Undo escaping of special characters in url
             """
-            uu = urllib.parse.unquote(u)
-            if uu == u:
-                return uu
+            unescaped_url = urllib.parse.unquote(url)
+            if unescaped_url == url:
+                return unescaped_url
             else:
-                return full_unescape(uu)
+                return full_unescape(unescaped_url)
 
         def quote(unsafe_string):
             """
