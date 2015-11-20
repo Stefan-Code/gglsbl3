@@ -3,7 +3,7 @@ gglsbl3
 
 Python 3 client library for the Google Safe Browsing API (v3)
 
-[![Build Status](https://travis-ci.org/Stefan-Code/gglsbl3.svg)](https://travis-ci.org/Stefan-Code/gglsbl3)
+[![Build Status](https://api.travis-ci.org/Stefan-Code/gglsbl3.svg?branch=master)](https://travis-ci.org/Stefan-Code/gglsbl3)
 [![Build status](https://ci.appveyor.com/api/projects/status/m0x4rrd27mxfarf4/branch/master?svg=true)](https://ci.appveyor.com/project/Stefan-Code/gglsbl3/branch/master)
 [![Coverage Status](https://coveralls.io/repos/Stefan-Code/gglsbl3/badge.svg?branch=master&service=github)](https://coveralls.io/github/Stefan-Code/gglsbl3?branch=master)
 [![License](https://img.shields.io/pypi/l/gglsbl3.svg)](https://github.com/Stefan-Code/gglsbl3/blob/master/LICENSE)
