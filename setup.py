@@ -36,5 +36,8 @@ setup(name='gglsbl3',
       license='Apache2',
       packages=['gglsbl3', 'gglsbl3.util'],
       install_requires=['argparse', 'python3-protobuf', ],
-      scripts=['scripts/gglsbl_client.py'],
+      entry_points='''
+        [console_scripts]
+        gglsbl3=gglsbl3:cli
+        ''',
       )
