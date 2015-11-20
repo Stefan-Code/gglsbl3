@@ -25,26 +25,49 @@ log = logging.getLogger('gglsbl3')
 import gglsbl3
 from gglsbl3 import SafeBrowsingList
 
+pass_sbl = click.make_pass_decorator(SafeBrowsingList)
+
 @click.group()
 @click.version_option(gglsbl3.__version__)
-@click.option('--api-key', '-k', required=True)
-@click.option('--log-level')
-@click.option('--log-file')
-@click.option('--debug')
-@click.option('--trace')
-def cli(api_key, log_level, debug, trace):
-    log_level = _get_log_level(log_level, debug, trace)
-    _setup_logger(log_level, log_file)
-    log.debug("using api key %s", api_key)
+@click.option('--api-key', '-k', envvar='GGLSBL3_API_KEY',
+              required=True, metavar='API_KEY', help='Your google safe browsing v3 API key')
+@click.option('--db-file', type=click.Path(file_okay=True),
+              default='./gsb_v3.db',
+              help='The path to the sqlite database file tp use. (including the filename)')
+@click.option('--no-fair-use', is_flag=True,
+              help='Disable the fair use policiy, i.e. Do not wait between requests as required by google')
+@click.option('--log-level',
+              type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']))
+@click.option('--log-file',
+              type=click.Path(file_okay=True), help='file to write logging messages to')
+@click.option('--log-file-level',
+              type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']))
+@click.option('--debug', is_flag=True)
+@click.option('--trace', is_flag=True)
+@click.option('--dev', is_flag=True)
+@click.option('--silent', '-s', is_flag=True)
+@click.pass_context
+def cli(ctx, *args, **kwargs):
+    log_level = _get_log_level(kwargs['log_level'], debug=kwargs['debug'], trace=kwargs['trace'])
+    _setup_logger(log_level, kwargs['log_file'])
+    log.debug("using api key %s", kwargs['api_key'])
+    ctx.obj = SafeBrowsingList(kwargs['api_key'], kwargs['db_file'], discard_fair_use_policy=kwargs['no_fair_use'])
 
-@click.command()
-def sync(api_key):
-    pass
+@cli.command()
+@pass_sbl
+def sync(ctx):
+    echo("syncing")
 
-@click.command()
-def lookup(api_key):
-    pass
-
+@cli.command()
+@click.argument('url', required=True)
+@pass_sbl
+def lookup(ctx, url):
+    blacklisted = ctx.lookup_url(url)
+    if blacklisted is None:
+        echo('**NOT** blacklisted')
+    else:
+        for list_name in blacklisted:
+            echo('**BLACKLISTED** in %s' % list_name)
 def _setup_logger(log_level, log_file=None):
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(log_level)
@@ -69,7 +92,7 @@ def _setup_logger(log_level, log_file=None):
     log.debug('Setting up logging with level %s', log_level)
     log.log(TRACE, 'Logger has level %s', log.getEffectiveLevel())
 
-def _get_log_level(log_level, debug, trace):
+def _get_log_level(log_level, debug=False, trace=False, dev=False):
     try:
         log_level = log_level.lower()
     except AttributeError:
@@ -112,7 +135,7 @@ def main():
     # FIXME: Sync before lookup?
     if args.check_url:
         # FIXME: check for validity of API KEY, e.g. min-length
-        sbl = SafeBrowsingList(args.api_key, db_path=args.db_path)
+
         bl = sbl.lookup_url(args.check_url)
         if bl is None:
             print('%s is not blacklisted' % args.check_url)
