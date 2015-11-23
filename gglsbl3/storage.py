@@ -225,7 +225,7 @@ class SqliteStorage(StorageBase):
         "Delete records associated with 'add' chunk"
         if not chunk_numbers:
             return
-        log.info('Deleting "add" chunks %s' % repr(chunk_numbers))
+        log.debug('Deleting "add" chunks %s' % repr(chunk_numbers))
         for cn in self.expand_ranges(chunk_numbers):
             q = 'DELETE FROM chunk WHERE chunk_type=? AND chunk_number=?'
             self.dbc.execute(q, ['add', cn])
