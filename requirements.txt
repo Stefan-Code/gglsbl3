@@ -6,3 +6,5 @@ python3-protobuf==2.5.0
 coverage==3.7.1
 coveralls==1.1
 bumpversion==0.5.3
+click==5.1
+colorlog==2.6.0
