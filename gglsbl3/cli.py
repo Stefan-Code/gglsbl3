@@ -11,6 +11,8 @@ import sys
 import time
 import os
 import logging
+import socket
+import urllib
 
 import click
 
@@ -18,14 +20,25 @@ from click import echo
 from colorlog import ColoredFormatter
 
 TRACE = 5
-logging.addLevelName(TRACE, "TRACE")
+logging.addLevelName(TRACE, "TRACE")  # TODO: move this to package __init__.py ?
 log = logging.getLogger('gglsbl3')
 
 
 import gglsbl3
 from gglsbl3 import SafeBrowsingList
 
-pass_sbl = click.make_pass_decorator(SafeBrowsingList)
+class SafeBrowsingListCli:
+    """
+    Object to store the SafeBrowsingList instance and the configuration
+    supplied in the cli.
+    """
+    def __init__(self, sbl, config):
+        self.sbl = sbl
+        self.config = config
+
+pass_sbl = click.make_pass_decorator(SafeBrowsingListCli)
+SAFE = click.style("[ SAFE ]", bold=True, bg='green', fg='white')
+UNSAFE = click.style("[UNSAFE]", bold=True, bg='red', fg='white')
 
 @click.group()
 @click.version_option(gglsbl3.__version__)
@@ -37,7 +50,9 @@ pass_sbl = click.make_pass_decorator(SafeBrowsingList)
 @click.option('--no-fair-use', is_flag=True,
               help='Disable the fair use policiy, i.e. Do not wait between requests as required by google')
 @click.option('--log-level',
-              type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']))
+              type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']),
+              default='info'
+              )
 @click.option('--log-file',
               type=click.Path(file_okay=True), help='file to write logging messages to')
 @click.option('--log-file-level',
@@ -49,26 +64,48 @@ pass_sbl = click.make_pass_decorator(SafeBrowsingList)
 @click.pass_context
 def cli(ctx, *args, **kwargs):
     log_level = _get_log_level(kwargs['log_level'], debug=kwargs['debug'], trace=kwargs['trace'])
-    _setup_logger(log_level, kwargs['log_file'])
+    _setup_logger(log_level, kwargs['log_file'], kwargs['silent'])
     log.debug("using api key %s", kwargs['api_key'])
-    ctx.obj = SafeBrowsingList(kwargs['api_key'], kwargs['db_file'], discard_fair_use_policy=kwargs['no_fair_use'])
+    sbl = SafeBrowsingList(kwargs['api_key'], kwargs['db_file'], discard_fair_use_policy=kwargs['no_fair_use'])
+    ctx.obj = SafeBrowsingListCli(sbl, kwargs)
 
 @cli.command()
-@pass_sbl
+@click.pass_context
+@click.option('--exit-when-synced', is_flag=True)
 def sync(ctx):
-    echo("syncing")
+    echo("syncing...")
+    _run_sync(ctx.obj.sbl)
+
+@cli.command()
+@click.pass_context
+def update(ctx):
+    echo("running update... (this may take up to half an hour)")
+    _run_sync(ctx.obj.sbl, loop=False)
 
 @cli.command()
 @click.argument('url', required=True)
-@pass_sbl
+@click.pass_context
 def lookup(ctx, url):
-    blacklisted = ctx.lookup_url(url)
+    """
+    Look up a URL in the safebrowsing database
+    """
+    blacklisted = ctx.obj.sbl.lookup_url_with_metadata(url)
+    malware_type = 3  # 3 is the default return code if no metadata available but the url is listed
     if blacklisted is None:
-        echo('**NOT** blacklisted')
+        info = click.style('NOT blacklisted', bold=True, bg='green', fg='white')
+        echo('{safe} {url} is {info}'.format(safe=SAFE, url=url, info=info))
+        malware_type = 0  # 0 means url OK
     else:
+        malware_type = min([item['metadata'] for item in blacklisted if item['metadata'] != 0])
         for list_name in blacklisted:
-            echo('**BLACKLISTED** in %s' % list_name)
-def _setup_logger(log_level, log_file=None):
+            info = click.style('BLACKLISTED', bold=True, bg='red', fg='white')
+            echo('{unsafe} {url} is {info}'.format(unsafe=UNSAFE, url=url, info=info))
+    sys.exit(malware_type)
+
+def purge(ctx):
+    raise Exception("Not implemented")
+
+def _setup_logger(log_level, log_file=None, silent=False):
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(log_level)
     formatter = ColoredFormatter(
@@ -87,9 +124,10 @@ def _setup_logger(log_level, log_file=None):
             style='%'
     )
     ch.setFormatter(formatter)
-    log.addHandler(ch)
     log.setLevel(log_level)
-    log.debug('Setting up logging with level %s', log_level)
+    if not silent:
+        log.addHandler(ch)
+    log.debug('Set up logging with level %s', log_level)
     log.log(TRACE, 'Logger has level %s', log.getEffectiveLevel())
 
 def _get_log_level(log_level, debug=False, trace=False, dev=False):
@@ -113,42 +151,35 @@ def _get_log_level(log_level, debug=False, trace=False, dev=False):
         return log_level
     return logging.INFO  #  this is the default
 
-def _run_sync(sbl):
+def _run_sync(sbl, loop=True, exit_on_synced=False):
     """
     Synchronises the local database with the remote google servers.
-    Takes a SafeBrowsingList Object as an argumant.
+    Takes a SafeBrowsingList Object as an argument.
+    If loop is set to True it will update the database until it is in sync.
     """
-    try:
-        sbl.update_hash_prefix_cache()
-    except (KeyboardInterrupt, SystemExit) as e:
-        log.warning('Abort by user')
-        sys.exit(0)
-    except Exception as e:
-        log.exception('Failed to synchronize with GSB service: %s', e)
-        time.sleep(3)
-
-
-def main():
-    # FIXME: Exit more gracefully on urllib.error.URLError and other exceptions.
-    # catch exceptions individually and provide info on how to fix them
-
-    # FIXME: Sync before lookup?
-    if args.check_url:
-        # FIXME: check for validity of API KEY, e.g. min-length
-
-        bl = sbl.lookup_url(args.check_url)
-        if bl is None:
-            print('%s is not blacklisted' % args.check_url)
-        else:
-            print('%s is blacklisted in %s' % (args.check_url, bl))
-        sys.exit(0)
-    if args.onetime:
-        sbl = SafeBrowsingList(args.api_key, db_path=args.db_path, discard_fair_use_policy=True)
-        run_sync(sbl)
-    else:
-        sbl = SafeBrowsingList(args.api_key, db_path=args.db_path)
-        while True:
-            run_sync(sbl)
+    SLEEP_RETRY = 5
+    i = 0
+    while True:
+        i += 1
+        log.info("Syncing database, run #%d", i)
+        try:
+            synced = sbl.update_hash_prefix_cache()
+            if synced:
+                log.info("Database in sync!")
+                if exit_on_synced:
+                    break
+            if not loop:
+                break
+        except (KeyboardInterrupt, SystemExit):
+            log.warning('Abort by user')
+            sys.exit(0)
+        except urllib.error.URLError as e:
+            log.error(e.reason)
+            log.error('Are you connected to the internet? Failed to synchronize with GSB service: %s', e.reason)
+            time.sleep(SLEEP_RETRY)
+        except Exception as e:
+            log.critical('Unknown error. Failed to synchronize with GSB service: %s', e)
+            raise
 
 if __name__ == '__main__':
-    cli()
+    cli(None)
