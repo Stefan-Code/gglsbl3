@@ -66,7 +66,7 @@ class BaseProtocolClient(object):
         "Delay server query according to Request Frequency policy"
         delay = self.get_fair_use_delay()
         if delay < 0:
-            log.error("got negative delay: '%s', will not sleep", delay)
+            log.debug("got negative delay: '%s', will not sleep", delay)
         elif not self.discard_fair_use_policy:
             log.info('Sleeping for %s', util.prettify_seconds(delay))
             time.sleep(delay)
@@ -84,7 +84,10 @@ class BaseProtocolClient(object):
                                          headers={'Content-Length': len(payload)})
         try:
             response = urllib.request.urlopen(request)
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as e:
+            log.critical('Unknown error occured during api call: %s', e)
+            if e.code == 403:
+                log.error("Incorrect API key?")
             self._error_count += 1
             raise
         self._error_count = 0
@@ -168,6 +171,7 @@ class DataResponse(object):
                 chunk_id = line.split(':')[1]
                 self.del_sub_chunks.append(chunk_id)
             else:
+                log.critical('Response line has unexpected prefix. Line: %s', line)
                 raise RuntimeError('Response line has unexpected prefix: "%s"', line)
         self.lists_data = lists_data
 
@@ -252,6 +256,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         data = data.split('\n')
         next_delay = data.pop(0).strip()
         if not next_delay.startswith('n:'):
+            log.critical('Expected poll interval as first line, instead got %s', next_delay)
             raise RuntimeError('Expected poll interval as first line, got "%s"', next_delay)
         self.set_next_call_timeout(int(next_delay[2:]))
         return data
@@ -265,7 +270,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
             existing_chunks = {}
         log.log(TRACE, 'existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
-        log.info("raw data length: %d", len(raw_data))
+        log.debug("raw data length: %d", len(raw_data))
         log.log(TRACE, "got raw data: %s", str(raw_data))
         preparsed_data = self._preparse_data(raw_data)
         d = DataResponse(preparsed_data)
@@ -313,6 +318,7 @@ class FullHashProtocolClient(BaseProtocolClient):
                 if opts[3] == b'm':
                     has_metadata = True
                 else:
+                    log.critical('failed to parse full hash entry header "%s"', header)
                     raise RuntimeError('Failed to parse full hash entry header "%s"' % header)
             list_name = opts[0]
             entry_len = int(opts[1])
@@ -331,6 +337,7 @@ class FullHashProtocolClient(BaseProtocolClient):
                     metadata_strings.append(metadata_str)
                     hash_entry = hash_entry[next_metadata_len:]
             elif hash_entry:
+                log.critical('Hash length does not match header declaration for %s', hash_entry)
                 raise RuntimeError('Hash length does not match header declaration (no metadata)')
             hashes[list_name] = hash_strings
             log.debug("metadata strings are: %s", metadata_strings)
@@ -344,10 +351,10 @@ class FullHashProtocolClient(BaseProtocolClient):
                         metadata_string_parsed = metadata_string_proto.pattern_type  # pylint: disable=E1101
                         metadata_strings_parsed.append(metadata_string_parsed)
                     except Exception:
-                        log.error("failed to parse metadata string: '%s'", metadata_string)
+                        log.critical("failed to parse metadata string: '%s'", metadata_string)
                         raise
             else:
-                log.warn("hash '%s' has not metadata!", hash_entry)
+                log.warn("hash '%s' has no metadata!", hash_entry)
             log.debug("parsed metadata strings: %s", metadata_strings_parsed)
             metadata[list_name] = metadata_strings_parsed
         return hashes, metadata
