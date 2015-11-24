@@ -9,10 +9,9 @@ https://developers.google.com/safe-browsing/lookup_guide#GettingStarted
 """
 import sys
 import time
-import os
 import logging
-import socket
 import urllib
+import threading
 
 import click
 
@@ -26,6 +25,30 @@ log = logging.getLogger('gglsbl3')
 
 import gglsbl3
 from gglsbl3 import SafeBrowsingList
+
+class MockLoggingHandler(logging.Handler):
+    """Mock logging handler to check for expected logs.
+
+    Messages are available from an instance's ``messages`` dict, in order, indexed by
+    a lowercase log level string (e.g., 'debug', 'info', etc.).
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.messages = {'trace': [], 'debug': [], 'info': [], 'warning': [], 'error': [],
+                         'critical': [], 'all': [],}
+        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        "Store a message from ``record`` in the instance's ``messages`` dict."
+        self.acquire()
+        try:
+            message = record.getMessage()
+            self.messages[record.levelname.lower()].append(message)
+            self.messages['all'].append(message)
+        finally:
+            self.release()
+
+mock_logging_handler = MockLoggingHandler()
 
 class SafeBrowsingListCli:
     """
@@ -48,7 +71,7 @@ UNSAFE = click.style("[UNSAFE]", bold=True, bg='red', fg='white')
               default='./gsb_v3.db',
               help='The path to the sqlite database file tp use. (including the filename)')
 @click.option('--no-fair-use', is_flag=True,
-              help='Disable the fair use policiy, i.e. Do not wait between requests as required by google')
+              help='Disable the fair use policiy. Do not wait between requests.')
 @click.option('--log-level',
               type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']),
               default='info'
@@ -72,7 +95,7 @@ def cli(ctx, *args, **kwargs):
 @cli.command()
 @click.pass_context
 @click.option('--exit-when-synced', is_flag=True)
-def sync(ctx):
+def sync(ctx, *args, **kwargs):
     echo("syncing...")
     _run_sync(ctx.obj.sbl)
 
@@ -99,7 +122,7 @@ def lookup(ctx, url):
         malware_type = min([item['metadata'] for item in blacklisted if item['metadata'] != 0])
         for list_name in blacklisted:
             info = click.style('BLACKLISTED', bold=True, bg='red', fg='white')
-            echo('{unsafe} {url} is {info}'.format(unsafe=UNSAFE, url=url, info=info))
+            echo('{unsafe} {url} is {info} in {list_name}'.format(unsafe=UNSAFE, url=url, info=info, list_name=list_name))
     sys.exit(malware_type)
 
 def purge(ctx):
@@ -127,6 +150,7 @@ def _setup_logger(log_level, log_file=None, silent=False):
     log.setLevel(log_level)
     if not silent:
         log.addHandler(ch)
+    log.addHandler(mock_logging_handler)
     log.debug('Set up logging with level %s', log_level)
     log.log(TRACE, 'Logger has level %s', log.getEffectiveLevel())
 
@@ -163,16 +187,33 @@ def _run_sync(sbl, loop=True, exit_on_synced=False):
         i += 1
         log.info("Syncing database, run #%d", i)
         try:
-            synced = sbl.update_hash_prefix_cache()
-            if synced:
-                log.info("Database in sync!")
-                if exit_on_synced:
-                    break
+            # echo("%d logging messages so far" % len(mock_logging_handler.messages['all']))
+            def sync_sbl():
+                return sbl.update_hash_prefix_cache()
+            t = threading.Thread(target=sync_sbl)
+            t.start()
+            time.sleep(2)
+            try:
+                sleeping = int(sbl.prefix_list_protocol_client.sleeping_until - time.time() - 2)
+                log.debug("sleeping for %d", sleeping)
+                with click.progressbar(range(sleeping), fill_char='\u2588', empty_char='\u2591', show_eta=False) as bar:
+                    for _second in bar:
+                        time.sleep(1)
+            except (ValueError, TypeError):
+                pass
+            t.join()
+            # while t.isAlive:
+            #     t.join(2)
+            # if synced:
+            #     log.info("Database in sync!")
+            #     if exit_on_synced:
+            #         break
             if not loop:
                 break
         except (KeyboardInterrupt, SystemExit):
             log.warning('Abort by user')
-            sys.exit(0)
+            sbl.prefix_list_protocol_client.stop_delay = True
+            sys.exit(5)
         except urllib.error.URLError as e:
             log.error(e.reason)
             log.error('Are you connected to the internet? Failed to synchronize with GSB service: %s', e.reason)
@@ -182,4 +223,5 @@ def _run_sync(sbl, loop=True, exit_on_synced=False):
             raise
 
 if __name__ == '__main__':
+    echo("CLICK IS RUN")
     cli(None)

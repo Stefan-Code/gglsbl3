@@ -68,7 +68,7 @@ class SqliteStorage(StorageBase):
     def __init__(self, db_path):
         do_init_db = not os.path.isfile(db_path)
         log.info('Opening SQLite DB %s' % db_path)
-        self.db = sqlite3.connect(db_path)
+        self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.dbc = self.db.cursor()
         if do_init_db:
             log.info('SQLite DB does not exist, initializing')
@@ -122,7 +122,7 @@ class SqliteStorage(StorageBase):
 
     def store_chunk(self, chunk):
         "Store chunk in the database"
-        log.debug('Storing %s chunk #%s for list name %s' % (chunk.chunk_type, chunk.chunk_number, chunk.list_name))
+        log.log(TRACE, 'Storing %s chunk #%s for list name %s' % (chunk.chunk_type, chunk.chunk_number, chunk.list_name))
         self.insert_chunk(chunk)
         for hash_value in chunk.hashes:
             hash_prefix = {

@@ -44,6 +44,8 @@ class BaseProtocolClient(object):
         self.discard_fair_use_policy = discard_fair_use_policy
         self._next_call_timestamp = 0
         self._error_count = 0
+        self.sleeping_until = None
+        self.stop_delay = False
 
     def set_next_call_timeout(self, delay):
         """
@@ -69,7 +71,12 @@ class BaseProtocolClient(object):
             log.debug("got negative delay: '%s', will not sleep", delay)
         elif not self.discard_fair_use_policy:
             log.info('Sleeping for %s', util.prettify_seconds(delay))
-            time.sleep(delay)
+            self.sleeping_until = time.time() + delay
+            log.debug("sleeping until %d", self.sleeping_until)
+            for _second in range(delay):
+                if self.stop_delay:
+                    raise SystemExit
+                time.sleep(1)
         else:
             log.debug("didn't sleep because of settings")
 
@@ -281,20 +288,6 @@ class FullHashProtocolClient(BaseProtocolClient):
     """
     API client using full length hashes instead of prefixes
     """
-    def fair_use_delay(self):
-        """Throttle queries according to Request Frequency policy
-
-        https://developers.google.com/safe-browsing/developers_guide_v3#RequestFrequency
-        """
-        delay = self.get_fair_use_delay()
-        log.debug("preparing to sleep for %d seconds", delay)
-        if delay > 0 and not self.discard_fair_use_policy:
-            log.info('Sleeping for %s seconds', delay)
-            time.sleep(delay)
-        else:
-            log.debug("didn't sleep because of settings. fair use is: %s",
-                      self.discard_fair_use_policy)
-
     def get_fair_use_delay(self):
         if self._error_count > 1:
             delay = min(120, 30 * (2 ** (self._error_count - 2)))

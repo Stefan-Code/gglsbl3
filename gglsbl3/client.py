@@ -27,6 +27,7 @@ class SafeBrowsingList(object):
             )
         self.full_hash_protocol_client = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
+        self.updated_chunks = -1  # number of chunks that were affected by the last update
 
     def _close_storage(self):
         """
@@ -51,6 +52,7 @@ class SafeBrowsingList(object):
         if total_chunks == 0:
             log.debug("Database is in sync.")
             return True
+        self.updated_chunks = total_chunks
         if response.reset_required:
             log.warning("Database reset is required!")
             self.storage.total_cleanup()
