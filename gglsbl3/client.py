@@ -49,9 +49,6 @@ class SafeBrowsingList(object):
                   len(response.del_add_chunks),
                   len(response.del_sub_chunks))
         total_chunks = len(response.del_sub_chunks) + len(response.del_add_chunks)
-        if total_chunks == 0:
-            log.debug("Database is in sync.")
-            return True
         self.updated_chunks = total_chunks
         if response.reset_required:
             log.warning("Database reset is required!")
@@ -70,7 +67,11 @@ class SafeBrowsingList(object):
             log.warning("Rolling back database because of error")
             self.storage.db.rollback()
             raise
-        return False
+        if total_chunks == 0:
+            log.debug("Database is in sync.")
+            return True
+        else:
+            return False
 
     def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
