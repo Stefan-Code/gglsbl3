@@ -223,5 +223,4 @@ def _run_sync(sbl, loop=True, exit_on_synced=False):
             raise
 
 if __name__ == '__main__':
-    echo("CLICK IS RUN")
     cli(None)
