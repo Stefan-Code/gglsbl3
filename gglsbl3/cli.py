@@ -125,7 +125,7 @@ def purge(ctx, yes):
 
 @cli.command()
 @click.pass_context
-def stat(ctx):
+def stats(ctx):
     chunks = ctx.obj.sbl.storage.get_num_chunks()
     hash_prefixes = ctx.obj.sbl.storage.get_num_hash_prefixes()
     full_hashes = ctx.obj.sbl.storage.get_num_full_hashes()
