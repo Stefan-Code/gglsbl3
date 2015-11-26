@@ -45,7 +45,7 @@ class SafeBrowsingList(object):
         response = self.prefix_list_protocol_client.retrieve_missing_chunks(
             existing_chunks=existing_chunks
             )
-        log.debug("Response contains %d add-chunks and %d sub-chunks",
+        log.info("Response contains %d add-chunks and %d sub-chunks",
                   len(response.del_add_chunks),
                   len(response.del_sub_chunks))
         total_chunks = len(response.del_sub_chunks) + len(response.del_add_chunks)
@@ -68,7 +68,7 @@ class SafeBrowsingList(object):
             self.storage.db.rollback()
             raise
         if total_chunks == 0:
-            log.debug("Database is in sync.")
+            log.info("Database is in sync.")
             return True
         else:
             return False
