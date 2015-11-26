@@ -12,6 +12,7 @@ import time
 import logging
 import urllib
 import threading
+import os
 
 import click
 
@@ -78,7 +79,7 @@ def sync(ctx, *args, **kwargs):
 @cli.command()
 @click.pass_context
 def update(ctx):
-    echo("running update... (this may take up to half an hour)")
+    echo("running update...")
     _run_sync(ctx.obj.sbl, loop=False)
 
 @cli.command()
@@ -101,8 +102,31 @@ def lookup(ctx, url):
             echo('{unsafe} {url} is {info} in {list_name}'.format(unsafe=UNSAFE, url=url, info=info, list_name=list_name))
     sys.exit(malware_type)
 
-def purge(ctx):
-    raise Exception("Not implemented")
+@cli.command()
+@click.option('--yes', '-y', is_flag=True)
+@click.pass_context
+def purge(ctx, yes):
+    db_file = os.path.abspath(ctx.obj.config['db_file'])
+    if not yes:
+        confirmed = click.confirm("Are you sure you want to remove {}".format(db_file))
+    else:
+        confirmed = True
+    if confirmed:
+        #raise Exception("Not implemented")
+        #ctx.obj.sbl.storage.total_cleanup()  # cleaned database still uses a lot of disk space
+        try:
+            echo('removing {}'.format(db_file))
+            os.remove(db_file)
+        except:
+            raise
+        echo('done.')
+    else:
+        echo("aborting.")
+
+@cli.command()
+@click.pass_context
+def stat(ctx):
+    raise Exception("not implemented")
 
 def _setup_logger(log_level, log_file=None, silent=False):
     ch = logging.StreamHandler(sys.stdout)
