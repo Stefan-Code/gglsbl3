@@ -126,7 +126,10 @@ def purge(ctx, yes):
 @cli.command()
 @click.pass_context
 def stat(ctx):
-    raise Exception("not implemented")
+    chunks = ctx.obj.sbl.storage.get_num_chunks()
+    hash_prefixes = ctx.obj.sbl.storage.get_num_hash_prefixes()
+    full_hashes = ctx.obj.sbl.storage.get_num_full_hashes()
+    echo('Database contains %d chunks, %d hash prefixes and %d full hashes' % (chunks, hash_prefixes, full_hashes))
 
 def _setup_logger(log_level, log_file=None, silent=False):
     ch = logging.StreamHandler(sys.stdout)
