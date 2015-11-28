@@ -83,6 +83,7 @@ class BaseProtocolClient(object):
     def api_call(self, url, payload=None):
         "Perform a call to Safe Browsing API"
         log.debug("performing api call to %s", util.format_max_len(url, 35))
+        log.log(TRACE, 'performing api call to %s', url)
         if payload is None:
             payload = b''
         if isinstance(payload, str):
@@ -98,7 +99,9 @@ class BaseProtocolClient(object):
             self._error_count += 1
             raise
         self._error_count = 0
-        return response.read()
+        read_response = response.read()
+        log.log(TRACE, 'got api call response: %s', read_response)
+        return read_response
 
     def make_url(self, service):
         "Generate Safe Browsing API URL"
@@ -154,6 +157,8 @@ class DataResponse(object):
         self._parse_data(raw_data)
 
     def _parse_data(self, data):
+        log.debug('parsing data with length %d', len(data))
+        log.log(TRACE, 'parsing data: %s', data)
         lists_data = {}
         current_list_name = None
         for line in data:
@@ -167,15 +172,18 @@ class DataResponse(object):
                 url = line[2:]
                 if not url.startswith('https://'):
                     url = 'https://%s' % url
+                log.log(TRACE, 'adding url %s', url)
                 lists_data[current_list_name].append(url)
             elif line.startswith('r:'):
                 log.warning("Reset is required!")
                 self.reset_required = True
             elif line.startswith('ad:'):
                 chunk_id = line.split(':')[1]
+                log.log(TRACE, 'appending add chunk %s', chunk_id)
                 self.del_add_chunks.append(chunk_id)
             elif line.startswith('sd:'):
                 chunk_id = line.split(':')[1]
+                log.log(TRACE, 'appending sub chunk %s', chunk_id)
                 self.del_sub_chunks.append(chunk_id)
             else:
                 log.critical('Response line has unexpected prefix. Line: %s', line)
@@ -238,7 +246,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
     def _fetchData(self, existing_chunks):
         "Get references to data chunks containing hash prefixes"
-        log.log(TRACE, "chunks: %s", existing_chunks)
+        #log.log(TRACE, "chunks: %s", existing_chunks)
         self.fair_use_delay()
         url = self.make_url('downloads')
         payload = []
