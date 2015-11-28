@@ -45,10 +45,13 @@ class SafeBrowsingList(object):
         response = self.prefix_list_protocol_client.retrieve_missing_chunks(
             existing_chunks=existing_chunks
             )
-        log.info("Response contains %d add-chunks and %d sub-chunks",
+        list_data_length = sum([len(item) for item in response.lists_data.values()])
+        log.info("Response contains %d add-chunks and %d sub-chunks (list data combined length: %d)",
                   len(response.del_add_chunks),
-                  len(response.del_sub_chunks))
-        total_chunks = len(response.del_sub_chunks) + len(response.del_add_chunks)
+                  len(response.del_sub_chunks),
+                  list_data_length)
+        total_chunks = len(response.del_sub_chunks) + len(response.del_add_chunks) + list_data_length
+        log.debug('got a total of %d chunks', total_chunks)
         self.updated_chunks = total_chunks
         if response.reset_required:
             log.warning("Database reset is required!")
