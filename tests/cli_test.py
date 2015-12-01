@@ -9,15 +9,14 @@ from gglsbl3 import cli
 class CliTest(unittest.TestCase):
     def setUp(self):
         self.runner = CliRunner()
+        self.dbpath = './testdb.sqlite'
     def tearDown(self):
         pass
 
     def test_help(self):
         result = self.runner.invoke(cli, ['--help'])
         print(result.output)
-        #assert 'Usage: cli [OPTIONS] COMMAND [ARGS]' in result.output
         assert_in('Usage: cli [OPTIONS] COMMAND [ARGS]', result.output)
-        #raise
 
     def test_version(self):
         result = self.runner.invoke(cli, ['--version'])
@@ -34,3 +33,15 @@ class CliTest(unittest.TestCase):
         print(result)
         print(result.output)
         assert_in('Error: Missing command.', result.output)
+
+    def test_fake_api_key_lookup(self):
+        '''
+        This test will never connect to the google servers and download
+        full hashes because the database we are working on
+        does not contain any prefixes.
+        Thus no http mocking is needed.
+        '''
+        result = self.runner.invoke(cli, ['--api-key', 'abcdefghijklmnop', '--db-file', self.dbpath, 'lookup', 'google.com'])
+        print(result)
+        print(result.output)
+        eq_(result.exit_code, 0)
