@@ -1,6 +1,7 @@
 import click
 from click.testing import CliRunner
 import unittest
+import os
 from nose.tools import *
 from nose.tools import assert_in, assert_not_equals
 import gglsbl3
@@ -9,9 +10,9 @@ from gglsbl3 import cli
 class CliTest(unittest.TestCase):
     def setUp(self):
         self.runner = CliRunner()
-        self.dbpath = './testdb.sqlite'
+        self.dbpath = './testdb-cli.sqlite'
     def tearDown(self):
-        pass
+        os.remove(self.dbpath)
 
     def test_help(self):
         result = self.runner.invoke(cli, ['--help'])
