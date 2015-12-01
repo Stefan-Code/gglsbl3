@@ -12,7 +12,10 @@ class CliTest(unittest.TestCase):
         self.runner = CliRunner()
         self.dbpath = './testdb-cli.sqlite'
     def tearDown(self):
-        os.remove(self.dbpath)
+        try:
+            os.remove(self.dbpath)
+        except FileNotFoundError:
+            pass
 
     def test_help(self):
         result = self.runner.invoke(cli, ['--help'])
