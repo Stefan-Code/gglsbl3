@@ -4,9 +4,11 @@ python:
 - '3.4'
 - '3.5'
 install:
+- pip install -U pip
 - pip install -r requirements.txt
 - pip install -U .
 script:
+- pip freeze
 - pylint --errors-only gglsbl3
 - nosetests --with-coverage --cover-package=gglsbl3 --logging-level=DEBUG
 after_success: coveralls
