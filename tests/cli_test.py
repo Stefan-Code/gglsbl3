@@ -1,3 +1,6 @@
+'''
+Testing of the command line client
+'''
 import click
 from click.testing import CliRunner
 import unittest
@@ -16,6 +19,8 @@ class CliTest(unittest.TestCase):
             os.remove(self.dbpath)
         except FileNotFoundError:
             pass
+        except OSError:
+            print('failed to remove database in teardown')  # windows problem
 
     def test_help(self):
         result = self.runner.invoke(cli, ['--help'])
@@ -48,4 +53,5 @@ class CliTest(unittest.TestCase):
         result = self.runner.invoke(cli, ['--api-key', 'abcdefghijklmnop', '--db-file', self.dbpath, 'lookup', 'google.com'])
         print(result)
         print(result.output)
+        assert_in("not blacklisted", result.output.lower())
         eq_(result.exit_code, 0)
