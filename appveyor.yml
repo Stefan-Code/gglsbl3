@@ -59,7 +59,7 @@ install:
   # pip will build them from source using the MSVC compiler matching the
   # target Python version and architecture
   - "%CMD_IN_ENV% dir"
-  - "%CMD_IN_ENV% pip install -r requirements.txt"
+  - "%CMD_IN_ENV% pip install -r dev-requirements.txt"
 
 build_script:
   # Build the compiled extension
