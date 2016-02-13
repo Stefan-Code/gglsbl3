@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Keeps local Google Safe Browsing cache in sync.
+"""CLI to synchronize the local hash storage and lookup URLs
 
 Accessing Google Safe Browsing API requires API key, you can find
 more info on getting it here:
@@ -14,13 +14,14 @@ import urllib
 import threading
 import os
 
+from threading import Thread
+
 import click
 
 from click import echo
 from colorlog import ColoredFormatter
 
 TRACE = 5
-logging.addLevelName(TRACE, "TRACE")  # TODO: move this to package __init__.py ?
 log = logging.getLogger('gglsbl3')
 
 
@@ -29,12 +30,28 @@ from gglsbl3 import SafeBrowsingList
 
 class SafeBrowsingListCli:
     """
-    Object to store the SafeBrowsingList instance and the configuration
-    supplied in the cli.
+    Object used to store the SafeBrowsingList instance and the configuration supplied in the cli. (for click)
     """
     def __init__(self, sbl, config):
         self.sbl = sbl
         self.config = config
+
+class ThreadReturn(Thread):
+    def join(self):
+        super(ThreadReturn, self).join()
+        try:
+            result = self.result
+            return result
+        except:
+            return
+    def run(self):
+        try:
+            if self._target:
+                self.result = self._target(*self._args, **self._kwargs)
+        finally:
+            # Avoid a refcycle if the thread is running a function with
+            # an argument that has a member that points to the thread.
+            del self._target, self._args, self._kwargs
 
 pass_sbl = click.make_pass_decorator(SafeBrowsingListCli)
 SAFE = click.style("[ SAFE ]", bold=True, bg='green', fg='white')
@@ -43,7 +60,7 @@ UNSAFE = click.style("[UNSAFE]", bold=True, bg='red', fg='white')
 @click.group()
 @click.version_option(gglsbl3.__version__)
 @click.option('--api-key', '-k', envvar='GGLSBL3_API_KEY',
-              required=True, metavar='API_KEY', help='Your google safe browsing v3 API key')
+              required=True, metavar='API_KEY', help='Your google safe browsing v3 API key. Envvar: GGLSBL3_API_KEY')
 @click.option('--db-file', type=click.Path(file_okay=True),
               default='./gsb_v3.db',
               help='The path to the sqlite database file tp use. (including the filename)')
@@ -57,15 +74,13 @@ UNSAFE = click.style("[UNSAFE]", bold=True, bg='red', fg='white')
               type=click.Path(file_okay=True), help='file to write logging messages to')
 @click.option('--log-file-level',
               type=click.Choice(['trace', 'debug', 'info', 'warning', 'error', 'critical']))
-@click.option('--debug', is_flag=True)
-@click.option('--trace', is_flag=True)
-@click.option('--dev', is_flag=True)
+#TODO: add option to disable color logging (for piping to file). Maybe auto detect with click.
 @click.option('--silent', '-s', is_flag=True)
 @click.pass_context
 def cli(ctx, *args, **kwargs):
-    log_level = _get_log_level(kwargs['log_level'], debug=kwargs['debug'], trace=kwargs['trace'])
+    log_level = _get_log_level(kwargs['log_level'])
     _setup_logger(log_level, kwargs['log_file'], kwargs['silent'])
-    log.debug("using api key %s", kwargs['api_key'])
+    log.log(TRACE, "using api key %s", kwargs['api_key'])
     sbl = SafeBrowsingList(kwargs['api_key'], kwargs['db_file'], discard_fair_use_policy=kwargs['no_fair_use'])
     ctx.obj = SafeBrowsingListCli(sbl, kwargs)
 
@@ -81,6 +96,7 @@ def sync(ctx, *args, **kwargs):
 def update(ctx):
     echo("running update...")
     _run_sync(ctx.obj.sbl, loop=False)
+    echo("done!")
 
 @cli.command()
 @click.argument('url', required=True)
@@ -90,11 +106,11 @@ def lookup(ctx, url):
     Look up a URL in the safebrowsing database
     """
     blacklisted = ctx.obj.sbl.lookup_url_with_metadata(url)
-    malware_type = 3  # 3 is the default return code if no metadata available but the url is listed
+    malware_type = 3  # 3 is the default exit code if no metadata available but the url is listed
     if blacklisted is None:
         info = click.style('NOT blacklisted', bold=True, bg='green', fg='white')
         echo('{safe} {url} is {info}'.format(safe=SAFE, url=url, info=info))
-        malware_type = 0  # 0 means url OK
+        malware_type = 0  # 0 exit code means url OK
     else:
         malware_type = min([item['metadata'] for item in blacklisted if item['metadata'] != 0])
         for list_name in blacklisted:
@@ -112,8 +128,6 @@ def purge(ctx, yes):
     else:
         confirmed = True
     if confirmed:
-        #raise Exception("Not implemented")
-        #ctx.obj.sbl.storage.total_cleanup()  # cleaned database still uses a lot of disk space
         try:
             echo('removing {}'.format(db_file))
             os.remove(db_file)
@@ -134,8 +148,13 @@ def stats(ctx):
 def _setup_logger(log_level, log_file=None, silent=False):
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(log_level)
+    if log_level <= 10:
+        #  log line number and corresponding source file if debugging is enabled
+        formatting_string = "%(log_color)s%(levelname)-8s%(reset)s %(message)s - %(filename)s:%(lineno)d"
+    else:
+        formatting_string = "%(log_color)s%(levelname)-8s%(reset)s %(message)s"
     formatter = ColoredFormatter(
-            "%(log_color)s%(levelname)-8s%(reset)s %(message)s - %(filename)s:%(lineno)d",
+            formatting_string,
             datefmt=None,
             reset=True,
             log_colors={
@@ -157,6 +176,9 @@ def _setup_logger(log_level, log_file=None, silent=False):
     log.log(TRACE, 'Logger has level %s', log.getEffectiveLevel())
 
 def _get_log_level(log_level, debug=False, trace=False, dev=False):
+    """
+    TODO: maybe use this instead of the click choice for logging.
+    """
     try:
         log_level = log_level.lower()
     except AttributeError:
@@ -180,6 +202,7 @@ def _get_log_level(log_level, debug=False, trace=False, dev=False):
 def _run_sync(sbl, loop=True, exit_on_synced=False):
     """
     Synchronises the local database with the remote google servers.
+
     Takes a SafeBrowsingList Object as an argument.
     If loop is set to True it will update the database until it is in sync.
     """
@@ -191,9 +214,9 @@ def _run_sync(sbl, loop=True, exit_on_synced=False):
         try:
             def sync_sbl():
                 return sbl.update_hash_prefix_cache()
-            t = threading.Thread(target=sync_sbl)
+            t = ThreadReturn(target=sync_sbl)
             t.start()
-            time.sleep(2)
+            time.sleep(2)  # make sure to give the thread enough time to set variables we are accessing
             try:
                 sleeping = int(sbl.prefix_list_protocol_client.sleeping_until - time.time() - 2)
                 log.debug("sleeping for %d", sleeping)
@@ -202,7 +225,10 @@ def _run_sync(sbl, loop=True, exit_on_synced=False):
                         time.sleep(1)
             except (ValueError, TypeError):
                 pass
-            t.join()
+            in_sync = t.join()
+            if in_sync:
+                echo('done. Database in sync')
+                break
             if not loop:
                 break
         except (KeyboardInterrupt, SystemExit):
