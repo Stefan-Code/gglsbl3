@@ -149,7 +149,7 @@ class SqliteStorage(StorageBase):
         try:
             self.dbc.execute(q, params)
         except sqlite3.IntegrityError as e:
-            log.warning("Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
+            log.log(TRACE, "Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
 
 
     def store_full_hashes(self, hash_prefix, hashes):
