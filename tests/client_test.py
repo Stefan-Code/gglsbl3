@@ -1,7 +1,5 @@
 '''
-Created on Mar 2, 2015
-
-@author: Stefan-Code
+Testing of the gglsbl3 client module (high level api)
 '''
 import unittest
 from gglsbl3 import client
@@ -17,11 +15,16 @@ class ClientTest(unittest.TestCase):
 
     def tearDown(self):
         self.client._close_storage()
-        os.remove(self.db_path)
+        try:
+            os.remove(self.db_path)
+        except:
+            print("error cleaning up database file, still in use??")
 
-    def testName(self):
+    def test_api_key(self):
         eq_(self.client.full_hash_protocol_client.config["url_args"]["key"], self.api_key)
 
+    def test_update_hash_prefix_cache(self):
+        mock_url = 'https://safebrowsing.google.com/safebrowsing/downloads?key={api_key}&pver=3.0&appver=0.1&client=api'
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']
