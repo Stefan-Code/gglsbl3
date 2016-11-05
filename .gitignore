@@ -83,3 +83,7 @@ untracked/
 
 #Coverage reports
 coverage/
+
+#virtualenv
+local/
+share/
