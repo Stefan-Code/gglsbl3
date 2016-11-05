@@ -27,6 +27,7 @@ class SafeBrowsingList(object):
             )
         self.full_hash_protocol_client = FullHashProtocolClient(api_key)
         self.storage = SqliteStorage(db_path)
+        self.updated_chunks = -1  # number of chunks that were affected by the last update
 
     def _close_storage(self):
         """
@@ -34,16 +35,24 @@ class SafeBrowsingList(object):
         """
         self.storage.close()
 
-    # FIXME: return True if there was something to update, return False if local database is in sync
     def update_hash_prefix_cache(self):
-        "Sync locally stored hash prefixes with remote server"
+        """
+        Update the local database.
+        Returns True if the database is in sync.
+        Returns False if the database is not in sync yet.
+        """
         existing_chunks = self.storage.get_existing_chunks()
         response = self.prefix_list_protocol_client.retrieve_missing_chunks(
             existing_chunks=existing_chunks
             )
-        log.debug("Response contains %d add-chunks and %d sub-chunks",
+        list_data_length = sum([len(item) for item in response.lists_data.values()])
+        log.info("Response contains %d add-chunks and %d sub-chunks (list data combined length: %d)",
                   len(response.del_add_chunks),
-                  len(response.del_sub_chunks))
+                  len(response.del_sub_chunks),
+                  list_data_length)
+        total_chunks = len(response.del_sub_chunks) + len(response.del_add_chunks) + list_data_length
+        log.debug('got a total of %d chunks', total_chunks)
+        self.updated_chunks = total_chunks
         if response.reset_required:
             log.warning("Database reset is required!")
             self.storage.total_cleanup()
@@ -61,6 +70,11 @@ class SafeBrowsingList(object):
             log.warning("Rolling back database because of error")
             self.storage.db.rollback()
             raise
+        if total_chunks == 0:
+            log.info("Database is in sync.")
+            return True
+        else:
+            return False
 
     def _sync_full_hashes(self, hash_prefix):
         "Sync full hashes starting with hash_prefix from remote server"
@@ -121,7 +135,8 @@ class SafeBrowsingList(object):
             else:
                 log.debug('hash not in database')
         except Exception as e:
-            log.error('Unknown error while looking up hash "%s" (%s)',
-                      binascii.hexlify(full_hash), e)
+            log.critical('Unknown error while looking up hash "%s" (%s)',
+                      binascii.hexlify(full_hash).decode('ascii'), e)
+            log.warning('Rolling back db')
             self.storage.db.rollback()
             raise

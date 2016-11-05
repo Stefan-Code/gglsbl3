@@ -35,6 +35,9 @@ setup(name='gglsbl3',
       url='https://github.com/Stefan-Code/gglsbl3',
       license='Apache2',
       packages=['gglsbl3', 'gglsbl3.util'],
-      install_requires=['argparse', 'python3-protobuf', ],
-      scripts=['scripts/gglsbl_client.py'],
+      install_requires=['argparse', 'python3-protobuf', 'click', 'colorlog'],
+      entry_points='''
+        [console_scripts]
+        gglsbl3=gglsbl3:cli
+        ''',
       )

@@ -69,7 +69,7 @@ class SqliteStorage(StorageBase):
     def __init__(self, db_path):
         do_init_db = not os.path.isfile(db_path)
         log.info('Opening SQLite DB %s' % db_path)
-        self.db = sqlite3.connect(db_path)
+        self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.dbc = self.db.cursor()
         if do_init_db:
             log.info('SQLite DB does not exist, initializing')
@@ -123,7 +123,7 @@ class SqliteStorage(StorageBase):
 
     def store_chunk(self, chunk):
         "Store chunk in the database"
-        log.debug('Storing %s chunk #%s for list name %s' % (chunk.chunk_type, chunk.chunk_number, chunk.list_name))
+        log.log(TRACE, 'Storing %s chunk #%s for list name %s' % (chunk.chunk_type, chunk.chunk_number, chunk.list_name))
         self.insert_chunk(chunk)
         for hash_value in chunk.hashes:
             hash_prefix = {
@@ -150,7 +150,7 @@ class SqliteStorage(StorageBase):
         try:
             self.dbc.execute(q, params)
         except sqlite3.IntegrityError as e:
-            log.warning("Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
+            log.log(TRACE, "Trying to insert existing hash prefix: '%s' (%s)", hash_prefix, e)
 
     def store_full_hashes(self, hash_prefix, hashes):
         "Store hashes found for the given hash prefix"
@@ -225,7 +225,7 @@ class SqliteStorage(StorageBase):
         "Delete records associated with 'add' chunk"
         if not chunk_numbers:
             return
-        log.info('Deleting "add" chunks %s' % repr(chunk_numbers))
+        log.debug('Deleting "add" chunks %s' % repr(chunk_numbers))
         for cn in self.expand_ranges(chunk_numbers):
             q = 'DELETE FROM chunk WHERE chunk_type=? AND chunk_number=?'
             self.dbc.execute(q, ['add', cn])
@@ -255,7 +255,14 @@ class SqliteStorage(StorageBase):
                 output[list_name][chunk_type] = self.compress_ranges(chunks)
         return output
 
-    # FiXME: add stats about number of chunks, number of fullhashes
+    def get_num_chunks(self):
+        return list(self.dbc.execute('SELECT COUNT(chunk_number) from chunk'))[0][0]
+
+    def get_num_hash_prefixes(self):
+        return list(self.dbc.execute('SELECT COUNT(value) from hash_prefix'))[0][0]
+
+    def get_num_full_hashes(self):
+        return list(self.dbc.execute('SELECT COUNT(value) from full_hash'))[0][0]
 
     def total_cleanup(self):
         "Reset local cache"

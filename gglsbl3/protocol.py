@@ -45,6 +45,8 @@ class BaseProtocolClient(object):
         self.discard_fair_use_policy = discard_fair_use_policy
         self._next_call_timestamp = 0
         self._error_count = 0
+        self.sleeping_until = None
+        self.stop_delay = False
 
     def set_next_call_timeout(self, delay):
         """
@@ -67,16 +69,22 @@ class BaseProtocolClient(object):
         "Delay server query according to Request Frequency policy"
         delay = self.get_fair_use_delay()
         if delay < 0:
-            log.error("got negative delay: '%s', will not sleep", delay)
+            log.debug("got negative delay: '%s', will not sleep", delay)
         elif not self.discard_fair_use_policy:
             log.info('Sleeping for %s', util.prettify_seconds(delay))
-            time.sleep(delay)
+            self.sleeping_until = time.time() + delay
+            log.debug("sleeping until %d", self.sleeping_until)
+            for _second in range(delay):
+                if self.stop_delay:
+                    raise SystemExit
+                time.sleep(1)
         else:
             log.debug("didn't sleep because of settings")
 
     def api_call(self, url, payload=None):
         "Perform a call to Safe Browsing API"
         log.debug("performing api call to %s", util.format_max_len(url, 35))
+        log.log(TRACE, 'performing api call to %s', url)
         if payload is None:
             payload = b''
         if isinstance(payload, str):
@@ -85,11 +93,16 @@ class BaseProtocolClient(object):
                                          headers={'Content-Length': len(payload)})
         try:
             response = urllib.request.urlopen(request)
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as e:
+            log.critical('Unknown error occured during api call: %s', e)
+            if e.code == 403:
+                log.error("Incorrect API key?")
             self._error_count += 1
             raise
         self._error_count = 0
-        return response.read()
+        read_response = response.read()
+        log.log(TRACE, 'got api call response: %s', read_response)
+        return read_response
 
     def make_url(self, service):
         "Generate Safe Browsing API URL"
@@ -145,6 +158,8 @@ class DataResponse(object):
         self._parse_data(raw_data)
 
     def _parse_data(self, data):
+        log.debug('parsing data with length %d', len(data))
+        log.log(TRACE, 'parsing data: %s', data)
         lists_data = {}
         current_list_name = None
         for line in data:
@@ -158,17 +173,21 @@ class DataResponse(object):
                 url = line[2:]
                 if not url.startswith('https://'):
                     url = 'https://%s' % url
+                log.log(TRACE, 'adding url %s', url)
                 lists_data[current_list_name].append(url)
             elif line.startswith('r:'):
                 log.warning("Reset is required!")
                 self.reset_required = True
             elif line.startswith('ad:'):
                 chunk_id = line.split(':')[1]
+                log.log(TRACE, 'appending add chunk %s', chunk_id)
                 self.del_add_chunks.append(chunk_id)
             elif line.startswith('sd:'):
                 chunk_id = line.split(':')[1]
+                log.log(TRACE, 'appending sub chunk %s', chunk_id)
                 self.del_sub_chunks.append(chunk_id)
             else:
+                log.critical('Response line has unexpected prefix. Line: %s', line)
                 raise RuntimeError('Response line has unexpected prefix: "%s"', line)
         self.lists_data = lists_data
 
@@ -228,7 +247,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
 
     def _fetchData(self, existing_chunks):
         "Get references to data chunks containing hash prefixes"
-        log.log(TRACE, "chunks: %s", existing_chunks)
+        #log.log(TRACE, "chunks: %s", existing_chunks)
         self.fair_use_delay()
         url = self.make_url('downloads')
         payload = []
@@ -253,6 +272,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
         data = data.split('\n')
         next_delay = data.pop(0).strip()
         if not next_delay.startswith('n:'):
+            log.critical('Expected poll interval as first line, instead got %s', next_delay)
             raise RuntimeError('Expected poll interval as first line, got "%s"', next_delay)
         self.set_next_call_timeout(int(next_delay[2:]))
         return data
@@ -266,7 +286,7 @@ class PrefixListProtocolClient(BaseProtocolClient):
             existing_chunks = {}
         log.log(TRACE, 'existing_chunks: %s', existing_chunks)
         raw_data = self._fetchData(existing_chunks)
-        log.info("raw data length: %d", len(raw_data))
+        log.debug("raw data length: %d", len(raw_data))
         log.log(TRACE, "got raw data: %s", str(raw_data))
         preparsed_data = self._preparse_data(raw_data)
         d = DataResponse(preparsed_data)
@@ -277,20 +297,6 @@ class FullHashProtocolClient(BaseProtocolClient):
     """
     API client using full length hashes instead of prefixes
     """
-    def fair_use_delay(self):
-        """Throttle queries according to Request Frequency policy
-
-        https://developers.google.com/safe-browsing/developers_guide_v3#RequestFrequency
-        """
-        delay = self.get_fair_use_delay()
-        log.debug("preparing to sleep for %d seconds", delay)
-        if delay > 0 and not self.discard_fair_use_policy:
-            log.info('Sleeping for %s seconds', delay)
-            time.sleep(delay)
-        else:
-            log.debug("didn't sleep because of settings. fair use is: %s",
-                      self.discard_fair_use_policy)
-
     def get_fair_use_delay(self):
         if self._error_count > 1:
             delay = min(120, 30 * (2 ** (self._error_count - 2)))
@@ -314,6 +320,7 @@ class FullHashProtocolClient(BaseProtocolClient):
                 if opts[3] == b'm':
                     has_metadata = True
                 else:
+                    log.critical('failed to parse full hash entry header "%s"', header)
                     raise RuntimeError('Failed to parse full hash entry header "%s"' % header)
             list_name = opts[0]
             entry_len = int(opts[1])
@@ -332,6 +339,7 @@ class FullHashProtocolClient(BaseProtocolClient):
                     metadata_strings.append(metadata_str)
                     hash_entry = hash_entry[next_metadata_len:]
             elif hash_entry:
+                log.critical('Hash length does not match header declaration for %s', hash_entry)
                 raise RuntimeError('Hash length does not match header declaration (no metadata)')
             hashes[list_name] = hash_strings
             log.debug("metadata strings are: %s", metadata_strings)
@@ -345,10 +353,10 @@ class FullHashProtocolClient(BaseProtocolClient):
                         metadata_string_parsed = metadata_string_proto.pattern_type  # pylint: disable=E1101
                         metadata_strings_parsed.append(metadata_string_parsed)
                     except Exception:
-                        log.error("failed to parse metadata string: '%s'", metadata_string)
+                        log.critical("failed to parse metadata string: '%s'", metadata_string)
                         raise
             else:
-                log.warn("hash '%s' has not metadata!", hash_entry)
+                log.warn("hash '%s' has no metadata!", hash_entry)
             log.debug("parsed metadata strings: %s", metadata_strings_parsed)
             metadata[list_name] = metadata_strings_parsed
         return hashes, metadata

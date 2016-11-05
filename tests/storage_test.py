@@ -1,7 +1,5 @@
 '''
-Created on Mar 2, 2015
-
-@author: Stefan-Code
+Testing of the gglsbl3 storage module
 '''
 import unittest
 import os
