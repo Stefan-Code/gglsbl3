@@ -1,6 +1,13 @@
 gglsbl3
 ======
 
+Deprecation warning
+---------------------
+This project uses the deprecated Google Safe Browsing v3 API.
+Consider using [afilipovich/gglsbl](https://github.com/afilipovich/gglsbl/) which supports the v4 API and has also been updated to also support `Python 3`
+
+---------------------------------------
+
 Python 3 client library for the Google Safe Browsing API (v3)
 
 [![Build Status](https://api.travis-ci.org/Stefan-Code/gglsbl3.svg?branch=master)](https://travis-ci.org/Stefan-Code/gglsbl3)
